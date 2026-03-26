@@ -48,7 +48,7 @@ const Navbar = () => {
             <a
               key={link.label}
               href={link.href}
-              className="font-body text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-gold transition-colors duration-300"
+              className={`font-body text-xs tracking-[0.2em] uppercase transition-colors duration-500 ${scrolled ? 'text-muted-foreground hover:text-gold' : 'text-gold hover:text-cream'}`}
             >
               {link.label}
             </a>
