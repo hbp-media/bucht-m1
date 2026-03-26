@@ -23,9 +23,9 @@ const Navbar = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
       style={{
-        backgroundColor: scrolled
+        background: scrolled
           ? "hsla(120, 8%, 6%, 0.85)"
-          : "transparent",
+          : "linear-gradient(180deg, hsla(0,0%,0%,0.6) 0%, hsla(0,0%,0%,0.25) 60%, transparent 100%)",
         backdropFilter: scrolled ? "blur(16px)" : "none",
         borderBottom: scrolled
           ? "1px solid hsla(80, 30%, 35%, 0.15)"
