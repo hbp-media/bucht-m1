@@ -36,7 +36,7 @@ const Navbar = () => {
             </span>
           </div>
           <div className="hidden sm:block">
-            <span className="font-display text-xl font-bold text-foreground tracking-wide">
+            <span className={`font-display text-xl font-bold tracking-wide transition-colors duration-500 ${scrolled ? 'text-foreground' : 'text-gold'}`}>
               Bucht M1
             </span>
           </div>
