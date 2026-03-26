@@ -23,13 +23,8 @@ const Navbar = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
       style={{
-        background: scrolled
-          ? "hsla(120, 8%, 6%, 0.85)"
-          : "linear-gradient(180deg, hsla(0,0%,0%,0.6) 0%, hsla(0,0%,0%,0.25) 60%, transparent 100%)",
+        background: scrolled ? "hsla(120, 8%, 6%, 0.85)" : "transparent",
         backdropFilter: scrolled ? "blur(16px)" : "none",
-        borderBottom: scrolled
-          ? "1px solid hsla(80, 30%, 35%, 0.15)"
-          : "1px solid transparent",
       }}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 md:py-5">
