@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Raleway:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,38 +6,64 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 96%;
+    --background: 150 12% 5%;
+    --foreground: 42 25% 92%;
 
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 96%;
+    --card: 150 14% 8%;
+    --card-foreground: 42 25% 92%;
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 150 14% 8%;
+    --popover-foreground: 42 25% 92%;
 
-    --primary: 145 40% 48%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 42 65% 52%;
+    --primary-foreground: 150 12% 5%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 96%;
+    --secondary: 150 15% 12%;
+    --secondary-foreground: 42 25% 92%;
 
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 50%;
+    --muted: 150 10% 14%;
+    --muted-foreground: 42 12% 55%;
 
-    --accent: 145 40% 48%;
-    --accent-foreground: 0 0% 4%;
+    --accent: 42 65% 52%;
+    --accent-foreground: 150 12% 5%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --ring: 145 40% 48%;
+    --border: 150 10% 18%;
+    --input: 150 10% 18%;
+    --ring: 42 65% 52%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
 
-    --font-display: 'Playfair Display', serif;
-    --font-body: 'Inter', sans-serif;
+    /* Custom luxury tokens */
+    --gold: 42 65% 52%;
+    --gold-light: 42 55% 65%;
+    --gold-muted: 42 30% 35%;
+    --forest: 150 25% 10%;
+    --forest-deep: 150 20% 6%;
+    --moss: 130 18% 18%;
+    --cream: 42 30% 88%;
+    --olive: 80 25% 35%;
+    --olive-light: 80 20% 48%;
+
+    --glass-bg: hsla(150, 14%, 8%, 0.55);
+    --glass-border: hsla(42, 65%, 52%, 0.12);
+    --glass-border-hover: hsla(42, 65%, 52%, 0.25);
+
+    --hero-overlay: linear-gradient(
+      180deg,
+      hsla(150, 12%, 5%, 0.2) 0%,
+      hsla(150, 12%, 5%, 0.55) 45%,
+      hsla(150, 12%, 5%, 0.88) 100%
+    );
+
+    --shadow-luxury: 0 25px 80px -15px hsla(0, 0%, 0%, 0.6);
+    --shadow-glass: 0 8px 32px hsla(0, 0%, 0%, 0.3);
+    --shadow-glow: 0 0 60px -10px hsla(42, 65%, 52%, 0.15);
+
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body: 'Raleway', sans-serif;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -65,9 +91,56 @@
   }
 }
 
+@layer components {
+  .hero-overlay {
+    background: var(--hero-overlay);
+  }
+
+  .glass-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  .glass-panel:hover {
+    border-color: var(--glass-border-hover);
+  }
+
+  .gradient-gold {
+    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--gold-light)) 50%, hsl(var(--gold)) 100%);
+  }
+
+  .gradient-gold-subtle {
+    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--olive-light)) 100%);
+  }
+
+  .text-shadow-hero {
+    text-shadow: 0 4px 40px hsla(0, 0%, 0%, 0.6);
+  }
+
+  .text-shadow-soft {
+    text-shadow: 0 2px 20px hsla(0, 0%, 0%, 0.4);
+  }
+}
+
 @layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 60%) 100%);
+  @keyframes slow-zoom {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.08); }
+  }
+
+  .animate-slow-zoom {
+    animation: slow-zoom 25s ease-in-out infinite alternate;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-shimmer {
+    background-size: 200% 100%;
+    animation: shimmer 8s ease-in-out infinite;
   }
 }
