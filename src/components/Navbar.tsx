@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { label: "Startseite", href: "#" },
-  { label: "Highlights", href: "#highlights" },
+  { label: "Erlebnis", href: "#erlebnis" },
   { label: "Galerie", href: "#galerie" },
   { label: "Kontakt", href: "#kontakt" },
 ];
@@ -23,45 +23,63 @@ const Navbar = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
       style={{
-        background: scrolled ? "hsla(0, 0%, 4%, 0.8)" : "transparent",
+        background: scrolled
+          ? "hsla(150, 12%, 5%, 0.88)"
+          : "linear-gradient(180deg, hsla(0,0%,0%,0.5) 0%, hsla(0,0%,0%,0.15) 70%, transparent 100%)",
         backdropFilter: scrolled ? "blur(20px)" : "none",
+        borderBottom: scrolled ? "1px solid hsla(42, 65%, 52%, 0.08)" : "none",
       }}
     >
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-5">
-        <a href="#" className="font-body text-sm font-semibold tracking-[0.3em] uppercase text-foreground">
-          Bucht M1
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 md:py-5">
+        {/* Logo */}
+        <a href="#" className="flex items-center gap-3 group">
+          <div className="w-9 h-9 rounded-sm gradient-gold-subtle flex items-center justify-center">
+            <span className="font-display text-sm font-bold text-primary-foreground leading-none">
+              M1
+            </span>
+          </div>
+          <span className="hidden sm:block font-display text-xl font-bold tracking-wide text-accent transition-colors duration-500">
+            Bucht M1
+          </span>
         </a>
 
+        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="font-body text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300"
+              className={`font-body text-xs tracking-[0.2em] uppercase transition-colors duration-500 ${
+                scrolled
+                  ? "text-muted-foreground hover:text-accent"
+                  : "text-foreground/70 hover:text-accent"
+              }`}
             >
               {link.label}
             </a>
           ))}
           <a
             href="#buchen"
-            className="ml-4 px-6 py-2.5 font-body text-xs tracking-[0.1em] uppercase font-semibold bg-primary text-primary-foreground rounded-full hover:brightness-110 transition-all duration-300"
+            className="ml-4 px-6 py-2.5 font-body text-xs tracking-[0.15em] uppercase font-semibold gradient-gold text-primary-foreground rounded-sm hover:shadow-lg transition-shadow duration-300"
           >
-            Buchen
+            Jetzt buchen
           </a>
         </nav>
 
+        {/* Mobile toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden text-foreground p-2"
           aria-label="Menü"
         >
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
+      {/* Mobile menu */}
       {mobileOpen && (
         <motion.div
-          className="md:hidden bg-card/95 backdrop-blur-xl border-t border-border"
+          className="md:hidden glass-panel border-t border-border"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           transition={{ duration: 0.3 }}
@@ -72,7 +90,7 @@ const Navbar = () => {
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground py-3 border-b border-border/30 transition-colors duration-300"
+                className="font-body text-sm tracking-[0.15em] uppercase text-muted-foreground hover:text-accent py-3 border-b border-border/30 transition-colors duration-300"
               >
                 {link.label}
               </a>
@@ -80,9 +98,9 @@ const Navbar = () => {
             <a
               href="#buchen"
               onClick={() => setMobileOpen(false)}
-              className="mt-3 px-6 py-3 text-center font-body text-xs tracking-[0.1em] uppercase font-semibold bg-primary text-primary-foreground rounded-full"
+              className="mt-3 px-6 py-3 text-center font-body text-xs tracking-[0.15em] uppercase font-semibold gradient-gold text-primary-foreground rounded-sm"
             >
-              Buchen
+              Jetzt buchen
             </a>
           </nav>
         </motion.div>
