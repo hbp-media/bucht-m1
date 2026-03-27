@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Raleway:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,57 +6,38 @@
 
 @layer base {
   :root {
-    --background: 120 8% 6%;
-    --foreground: 45 20% 90%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 96%;
 
-    --card: 120 10% 10%;
-    --card-foreground: 45 20% 90%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 120 10% 10%;
-    --popover-foreground: 45 20% 90%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 80 35% 45%;
-    --primary-foreground: 120 8% 6%;
+    --primary: 145 40% 48%;
+    --primary-foreground: 0 0% 4%;
 
-    --secondary: 120 12% 16%;
-    --secondary-foreground: 45 20% 90%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 120 8% 14%;
-    --muted-foreground: 45 10% 55%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 50%;
 
-    --accent: 38 60% 55%;
-    --accent-foreground: 120 8% 6%;
+    --accent: 145 40% 48%;
+    --accent-foreground: 0 0% 4%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 120 8% 20%;
-    --input: 120 8% 20%;
-    --ring: 80 35% 45%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 145 40% 48%;
 
-    --radius: 0.25rem;
+    --radius: 0.5rem;
 
-    /* Custom tokens */
-    --olive: 80 30% 35%;
-    --olive-light: 80 25% 50%;
-    --gold: 38 60% 55%;
-    --gold-muted: 38 30% 40%;
-    --forest: 140 25% 12%;
-    --moss: 100 20% 20%;
-    --cream: 45 30% 88%;
-    --hero-overlay: linear-gradient(
-      180deg,
-      hsla(120, 8%, 6%, 0.3) 0%,
-      hsla(120, 8%, 6%, 0.6) 50%,
-      hsla(120, 8%, 6%, 0.85) 100%
-    );
-    --panel-bg: hsla(120, 10%, 8%, 0.75);
-    --panel-border: hsla(80, 30%, 35%, 0.2);
-    --shadow-luxury: 0 25px 60px -15px hsla(0, 0%, 0%, 0.5);
-    --shadow-panel: 0 15px 40px -10px hsla(0, 0%, 0%, 0.4);
-
-    --font-display: 'Cormorant Garamond', serif;
-    --font-body: 'Raleway', sans-serif;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -84,41 +65,9 @@
   }
 }
 
-@layer components {
-  .hero-overlay {
-    background: var(--hero-overlay);
-  }
-
-  .panel-glass {
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
-
-  .diagonal-clip {
-    clip-path: polygon(0 8%, 100% 0%, 100% 92%, 0% 100%);
-  }
-
-  .diagonal-clip-reverse {
-    clip-path: polygon(0 0%, 100% 8%, 100% 100%, 0% 92%);
-  }
-
-  .text-shadow-hero {
-    text-shadow: 0 4px 30px hsla(0, 0%, 0%, 0.5);
-  }
-
-  .gradient-gold {
-    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--olive-light)) 100%);
-  }
-
-  .gradient-forest {
-    background: linear-gradient(180deg, hsl(var(--forest)) 0%, hsl(var(--background)) 100%);
-  }
-}
-
 @layer utilities {
-  .parallax-slow {
-    will-change: transform;
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 60%) 100%);
   }
 }
