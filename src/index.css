@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Raleway:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,64 +6,58 @@
 
 @layer base {
   :root {
-    --background: 150 12% 5%;
-    --foreground: 42 25% 92%;
+    --background: 40 20% 4%;
+    --foreground: 40 15% 90%;
 
-    --card: 150 14% 8%;
-    --card-foreground: 42 25% 92%;
+    --card: 40 12% 8%;
+    --card-foreground: 40 15% 90%;
 
-    --popover: 150 14% 8%;
-    --popover-foreground: 42 25% 92%;
+    --popover: 40 12% 8%;
+    --popover-foreground: 40 15% 90%;
 
-    --primary: 42 65% 52%;
-    --primary-foreground: 150 12% 5%;
+    --primary: 80 30% 38%;
+    --primary-foreground: 40 20% 4%;
 
-    --secondary: 150 15% 12%;
-    --secondary-foreground: 42 25% 92%;
+    --secondary: 40 10% 12%;
+    --secondary-foreground: 40 15% 90%;
 
-    --muted: 150 10% 14%;
-    --muted-foreground: 42 12% 55%;
+    --muted: 40 8% 14%;
+    --muted-foreground: 40 10% 50%;
 
-    --accent: 42 65% 52%;
-    --accent-foreground: 150 12% 5%;
+    --accent: 38 40% 72%;
+    --accent-foreground: 40 20% 4%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 150 10% 18%;
-    --input: 150 10% 18%;
-    --ring: 42 65% 52%;
+    --border: 40 8% 16%;
+    --input: 40 8% 16%;
+    --ring: 80 30% 38%;
 
-    --radius: 0.25rem;
+    --radius: 0.375rem;
 
-    /* Custom luxury tokens */
-    --gold: 42 65% 52%;
-    --gold-light: 42 55% 65%;
-    --gold-muted: 42 30% 35%;
-    --forest: 150 25% 10%;
-    --forest-deep: 150 20% 6%;
-    --moss: 130 18% 18%;
-    --cream: 42 30% 88%;
-    --olive: 80 25% 35%;
-    --olive-light: 80 20% 48%;
-
-    --glass-bg: hsla(150, 14%, 8%, 0.55);
-    --glass-border: hsla(42, 65%, 52%, 0.12);
-    --glass-border-hover: hsla(42, 65%, 52%, 0.25);
+    /* Custom tokens */
+    --olive: 80 30% 38%;
+    --olive-dark: 80 25% 22%;
+    --olive-light: 80 20% 52%;
+    --beige: 38 40% 72%;
+    --beige-light: 38 35% 85%;
+    --charcoal: 40 8% 10%;
+    --charcoal-deep: 40 12% 6%;
 
     --hero-overlay: linear-gradient(
-      180deg,
-      hsla(150, 12%, 5%, 0.2) 0%,
-      hsla(150, 12%, 5%, 0.55) 45%,
-      hsla(150, 12%, 5%, 0.88) 100%
+      160deg,
+      hsla(80, 25%, 8%, 0.75) 0%,
+      hsla(40, 15%, 4%, 0.85) 50%,
+      hsla(40, 20%, 4%, 0.92) 100%
     );
 
-    --shadow-luxury: 0 25px 80px -15px hsla(0, 0%, 0%, 0.6);
-    --shadow-glass: 0 8px 32px hsla(0, 0%, 0%, 0.3);
-    --shadow-glow: 0 0 60px -10px hsla(42, 65%, 52%, 0.15);
+    --shadow-card: 0 12px 40px -8px hsla(0, 0%, 0%, 0.5);
+    --shadow-card-hover: 0 20px 60px -10px hsla(0, 0%, 0%, 0.6);
+    --shadow-subtle: 0 4px 16px hsla(0, 0%, 0%, 0.2);
 
-    --font-display: 'Cormorant Garamond', serif;
-    --font-body: 'Raleway', sans-serif;
+    --font-display: 'Instrument Serif', serif;
+    --font-body: 'DM Sans', sans-serif;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -96,51 +90,18 @@
     background: var(--hero-overlay);
   }
 
-  .glass-panel {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-  }
-
-  .glass-panel:hover {
-    border-color: var(--glass-border-hover);
-  }
-
-  .gradient-gold {
-    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--gold-light)) 50%, hsl(var(--gold)) 100%);
-  }
-
-  .gradient-gold-subtle {
-    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--olive-light)) 100%);
-  }
-
   .text-shadow-hero {
-    text-shadow: 0 4px 40px hsla(0, 0%, 0%, 0.6);
-  }
-
-  .text-shadow-soft {
-    text-shadow: 0 2px 20px hsla(0, 0%, 0%, 0.4);
+    text-shadow: 0 2px 30px hsla(0, 0%, 0%, 0.5);
   }
 }
 
 @layer utilities {
   @keyframes slow-zoom {
     0% { transform: scale(1); }
-    100% { transform: scale(1.08); }
+    100% { transform: scale(1.06); }
   }
 
   .animate-slow-zoom {
-    animation: slow-zoom 25s ease-in-out infinite alternate;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-
-  .animate-shimmer {
-    background-size: 200% 100%;
-    animation: shimmer 8s ease-in-out infinite;
+    animation: slow-zoom 30s ease-in-out infinite alternate;
   }
 }

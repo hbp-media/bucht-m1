@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Cormorant Garamond", "serif"],
-        body: ["Raleway", "sans-serif"],
+        display: ["Instrument Serif", "serif"],
+        body: ["DM Sans", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,20 +51,18 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        gold: {
-          DEFAULT: "hsl(var(--gold))",
-          light: "hsl(var(--gold-light))",
-          muted: "hsl(var(--gold-muted))",
-        },
-        forest: {
-          DEFAULT: "hsl(var(--forest))",
-          deep: "hsl(var(--forest-deep))",
-        },
-        moss: "hsl(var(--moss))",
-        cream: "hsl(var(--cream))",
         olive: {
           DEFAULT: "hsl(var(--olive))",
+          dark: "hsl(var(--olive-dark))",
           light: "hsl(var(--olive-light))",
+        },
+        beige: {
+          DEFAULT: "hsl(var(--beige))",
+          light: "hsl(var(--beige-light))",
+        },
+        charcoal: {
+          DEFAULT: "hsl(var(--charcoal))",
+          deep: "hsl(var(--charcoal-deep))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
