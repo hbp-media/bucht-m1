@@ -24,19 +24,19 @@ const Navbar = () => {
       transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
       style={{
         background: scrolled
-          ? "hsla(40, 12%, 6%, 0.92)"
-          : "linear-gradient(180deg, hsla(0,0%,0%,0.4) 0%, transparent 100%)",
+          ? "hsla(36, 30%, 96%, 0.9)"
+          : "transparent",
         backdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom: scrolled ? "1px solid hsla(80, 30%, 38%, 0.1)" : "none",
+        borderBottom: scrolled ? "1px solid hsla(36, 18%, 82%, 0.5)" : "none",
       }}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-16 py-4 md:py-5">
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-6 md:px-12 py-4 md:py-5">
         {/* Logo */}
         <a href="#" className="flex items-center gap-3 group">
-          <div className="w-8 h-8 rounded-sm bg-primary flex items-center justify-center">
-            <span className="font-display text-sm text-primary-foreground leading-none">M1</span>
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+            <span className="font-display text-xs text-primary-foreground leading-none font-medium">M1</span>
           </div>
-          <span className="font-display text-xl text-foreground tracking-wide">
+          <span className={`font-display text-lg transition-colors duration-300 ${scrolled ? "text-foreground" : "text-foreground/80"}`}>
             Bucht M1
           </span>
         </a>
@@ -47,10 +47,10 @@ const Navbar = () => {
             <a
               key={link.label}
               href={link.href}
-              className={`font-body text-xs tracking-[0.18em] uppercase transition-colors duration-300 ${
+              className={`font-body text-xs tracking-[0.15em] uppercase transition-colors duration-300 ${
                 scrolled
                   ? "text-muted-foreground hover:text-primary"
-                  : "text-foreground/60 hover:text-foreground"
+                  : "text-foreground/50 hover:text-foreground/80"
               }`}
             >
               {link.label}
@@ -58,7 +58,7 @@ const Navbar = () => {
           ))}
           <a
             href="#buchen"
-            className="ml-4 px-7 py-2.5 font-body text-xs tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground rounded-sm hover:bg-olive-light transition-colors duration-300"
+            className="ml-4 px-6 py-2.5 font-body text-xs tracking-[0.1em] uppercase font-semibold bg-primary text-primary-foreground rounded-full hover:bg-sage transition-colors duration-300"
           >
             Buchen
           </a>
@@ -67,7 +67,7 @@ const Navbar = () => {
         {/* Mobile toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden text-foreground p-2"
+          className={`md:hidden p-2 transition-colors ${scrolled ? "text-foreground" : "text-foreground/70"}`}
           aria-label="Menü"
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -77,7 +77,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       {mobileOpen && (
         <motion.div
-          className="md:hidden bg-card border-t border-border"
+          className="md:hidden bg-background border-t border-border/50"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           transition={{ duration: 0.3 }}
@@ -88,7 +88,7 @@ const Navbar = () => {
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="font-body text-sm tracking-[0.12em] uppercase text-muted-foreground hover:text-primary py-3 border-b border-border/30 transition-colors duration-300"
+                className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-primary py-3 border-b border-border/30 transition-colors duration-300"
               >
                 {link.label}
               </a>
@@ -96,7 +96,7 @@ const Navbar = () => {
             <a
               href="#buchen"
               onClick={() => setMobileOpen(false)}
-              className="mt-3 px-6 py-3 text-center font-body text-xs tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground rounded-sm"
+              className="mt-3 px-6 py-3 text-center font-body text-xs tracking-[0.1em] uppercase font-semibold bg-primary text-primary-foreground rounded-full"
             >
               Buchen
             </a>

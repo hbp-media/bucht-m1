@@ -9,149 +9,112 @@ const HeroSection = () => {
     offset: ["start start", "end start"],
   });
 
-  const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
-  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
-  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.6, 0.9]);
+  const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+  const imgScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
+  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
 
   return (
-    <section ref={ref} className="relative h-screen overflow-hidden">
-      {/* Parallax background */}
-      <motion.div className="absolute inset-0 w-full h-full" style={{ y: imgY }}>
+    <section ref={ref} className="relative h-[90vh] md:h-screen overflow-hidden">
+      {/* Background with parallax + zoom */}
+      <motion.div
+        className="absolute inset-0 w-full h-full"
+        style={{ y: imgY, scale: imgScale }}
+      >
         <img
           src={lakeHero}
-          alt="Aerial view of Bucht M1 private carp fishing lake"
-          className="w-full h-[130%] object-cover animate-slow-zoom"
+          alt="Peaceful lake view at Bucht M1"
+          className="w-full h-[120%] object-cover"
           width={1920}
           height={1080}
         />
       </motion.div>
 
-      {/* Dynamic overlay */}
-      <motion.div
-        className="absolute inset-0"
-        style={{
-          opacity: overlayOpacity,
-          background: "linear-gradient(170deg, hsla(80, 20%, 6%, 0.7) 0%, hsla(40, 20%, 4%, 0.85) 50%, hsla(40, 15%, 3%, 0.95) 100%)",
-        }}
-      />
+      {/* Soft warm overlay fading to background */}
+      <div className="absolute inset-0 hero-overlay" />
 
-      {/* Organic shape accent */}
-      <div
-        className="absolute top-0 right-0 w-[60%] h-full z-[3] hidden lg:block opacity-40"
-        style={{
-          background: "radial-gradient(ellipse at 70% 30%, hsl(var(--olive) / 0.12), transparent 60%)",
-        }}
-      />
-
-      {/* Diagonal bottom cut */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-44 z-10"
-        style={{
-          background: "hsl(var(--background))",
-          clipPath: "polygon(0 55%, 100% 0%, 100% 100%, 0% 100%)",
-        }}
-      />
-
-      {/* Floating particles effect */}
-      <div className="absolute inset-0 z-[4] overflow-hidden pointer-events-none">
-        {[...Array(3)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-primary/20"
-            style={{
-              left: `${25 + i * 25}%`,
-              top: `${30 + i * 15}%`,
-            }}
-            animate={{
-              y: [-20, 20, -20],
-              opacity: [0.2, 0.5, 0.2],
-            }}
-            transition={{
-              duration: 6 + i * 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 1.5,
-            }}
-          />
-        ))}
+      {/* Curved bottom edge */}
+      <div className="absolute bottom-0 left-0 right-0 z-10">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full" preserveAspectRatio="none">
+          <path d="M0 60C240 120 480 120 720 80C960 40 1200 60 1440 90V120H0V60Z" fill="hsl(36, 30%, 96%)" />
+        </svg>
       </div>
 
       {/* Content */}
       <motion.div
-        className="relative z-20 flex flex-col items-start justify-center h-full px-6 md:px-16 lg:px-24 max-w-7xl mx-auto"
+        className="relative z-20 flex flex-col items-center justify-center h-full text-center px-6 max-w-4xl mx-auto"
         style={{ y: textY }}
       >
         <motion.div
-          className="flex items-center gap-4 mb-8"
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          className="mb-6"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 0.3 }}
         >
-          <div className="w-12 h-px bg-primary" />
-          <span className="font-body text-[11px] tracking-[0.4em] uppercase text-primary font-medium">
-            Natur. Ruhe. Erlebnis.
+          <span className="inline-block font-body text-[11px] tracking-[0.5em] uppercase text-primary bg-background/60 backdrop-blur-sm px-5 py-2 rounded-full border border-primary/20">
+            Private Carp Fishing
           </span>
         </motion.div>
 
         <motion.h1
-          className="font-display text-6xl md:text-8xl lg:text-[9rem] font-normal text-foreground text-shadow-hero leading-[0.88] mb-5"
-          initial={{ opacity: 0, y: 60 }}
+          className="font-display text-5xl md:text-7xl lg:text-8xl font-medium text-foreground leading-[1] mb-6"
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.1, delay: 0.6, ease: "easeOut" }}
+          transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
         >
           Dein Platz
           <br />
-          <span className="italic text-accent">am Wasser.</span>
+          <span className="italic text-primary">am Wasser.</span>
         </motion.h1>
 
         <motion.p
-          className="font-display text-lg md:text-xl lg:text-2xl text-muted-foreground mb-3 max-w-lg"
-          initial={{ opacity: 0, y: 30 }}
+          className="font-display text-lg md:text-xl text-foreground/70 mb-3"
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.9 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
         >
           Bucht M1 – Natur. Ruhe. Erlebnis.
         </motion.p>
 
         <motion.p
-          className="font-body text-sm md:text-base text-muted-foreground/70 max-w-md mb-14 leading-relaxed"
+          className="font-body text-sm md:text-base text-muted-foreground max-w-md mb-12 leading-relaxed"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 1.1 }}
+          transition={{ duration: 0.7, delay: 1 }}
         >
           Reserviere deinen Spot und erlebe Angeln neu.
         </motion.p>
 
         <motion.a
           href="#buchen"
-          className="group inline-flex items-center gap-3 px-12 py-4 font-body text-xs tracking-[0.25em] uppercase font-semibold bg-primary text-primary-foreground rounded-sm hover:bg-olive-light transition-all duration-400 relative overflow-hidden"
+          className="inline-flex items-center gap-3 px-10 py-4 font-body text-sm font-semibold bg-primary text-primary-foreground rounded-full hover:bg-sage transition-colors duration-300 shadow-lg hover:shadow-xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 1.3 }}
-          whileHover={{ scale: 1.03 }}
+          transition={{ duration: 0.7, delay: 1.2 }}
+          whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
         >
-          <span className="relative z-10">Jetzt buchen</span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="relative z-10 group-hover:translate-x-1 transition-transform duration-300">
+          Jetzt buchen
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
             <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </motion.a>
+      </motion.div>
 
-        {/* Scroll indicator */}
+      {/* Scroll hint */}
+      <motion.div
+        className="absolute bottom-28 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2, duration: 1 }}
+      >
         <motion.div
-          className="absolute bottom-24 left-6 md:left-16 lg:left-24 flex items-center gap-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2.2, duration: 1 }}
+          className="w-6 h-10 rounded-full border-2 border-foreground/20 flex items-start justify-center p-1.5"
         >
           <motion.div
-            className="w-px h-14 bg-primary/30"
-            animate={{ scaleY: [0.2, 1, 0.2] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="w-1.5 h-1.5 rounded-full bg-primary"
+            animate={{ y: [0, 16, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           />
-          <span className="text-[10px] font-body tracking-[0.35em] uppercase text-muted-foreground/50">
-            Entdecken
-          </span>
         </motion.div>
       </motion.div>
     </section>
