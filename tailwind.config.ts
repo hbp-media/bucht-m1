@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Instrument Serif", "serif"],
-        body: ["DM Sans", "sans-serif"],
+        display: ["Lora", "serif"],
+        body: ["Nunito Sans", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,18 +51,17 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        olive: {
-          DEFAULT: "hsl(var(--olive))",
-          dark: "hsl(var(--olive-dark))",
-          light: "hsl(var(--olive-light))",
+        earth: {
+          DEFAULT: "hsl(var(--earth))",
+          light: "hsl(var(--earth-light))",
         },
-        beige: {
-          DEFAULT: "hsl(var(--beige))",
-          light: "hsl(var(--beige-light))",
+        sage: {
+          DEFAULT: "hsl(var(--sage))",
+          light: "hsl(var(--sage-light))",
         },
-        charcoal: {
-          DEFAULT: "hsl(var(--charcoal))",
-          deep: "hsl(var(--charcoal-deep))",
+        sand: {
+          DEFAULT: "hsl(var(--sand))",
+          light: "hsl(var(--sand-light))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
