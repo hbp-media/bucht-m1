@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Nunito+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,58 +6,50 @@
 
 @layer base {
   :root {
-    --background: 36 30% 96%;
-    --foreground: 30 15% 18%;
+    --background: 40 10% 6%;
+    --foreground: 42 30% 92%;
 
-    --card: 36 28% 92%;
-    --card-foreground: 30 15% 18%;
+    --card: 40 8% 10%;
+    --card-foreground: 42 30% 92%;
 
-    --popover: 36 28% 92%;
-    --popover-foreground: 30 15% 18%;
+    --popover: 40 8% 10%;
+    --popover-foreground: 42 30% 92%;
 
-    --primary: 142 28% 38%;
-    --primary-foreground: 36 30% 96%;
+    --primary: 82 30% 42%;
+    --primary-foreground: 40 10% 6%;
 
-    --secondary: 36 22% 88%;
-    --secondary-foreground: 30 15% 18%;
+    --secondary: 40 8% 14%;
+    --secondary-foreground: 42 30% 92%;
 
-    --muted: 36 18% 85%;
-    --muted-foreground: 30 10% 45%;
+    --muted: 40 6% 18%;
+    --muted-foreground: 40 10% 55%;
 
-    --accent: 32 50% 55%;
-    --accent-foreground: 36 30% 96%;
+    --accent: 42 50% 55%;
+    --accent-foreground: 40 10% 6%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 36 18% 82%;
-    --input: 36 18% 82%;
-    --ring: 142 28% 38%;
+    --border: 40 8% 18%;
+    --input: 40 8% 18%;
+    --ring: 82 30% 42%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
     /* Custom tokens */
-    --earth: 30 20% 28%;
-    --earth-light: 32 25% 45%;
-    --sage: 142 20% 52%;
-    --sage-light: 142 22% 68%;
-    --sand: 36 35% 82%;
-    --sand-light: 36 40% 90%;
-    --warm-white: 36 30% 96%;
+    --gold: 42 50% 55%;
+    --gold-light: 42 45% 70%;
+    --olive: 82 30% 42%;
+    --olive-light: 82 25% 55%;
+    --charcoal: 40 8% 12%;
+    --charcoal-light: 40 6% 20%;
 
-    --hero-overlay: linear-gradient(
-      180deg,
-      hsla(30, 15%, 12%, 0.3) 0%,
-      hsla(30, 15%, 12%, 0.5) 60%,
-      hsla(36, 30%, 96%, 1) 100%
-    );
+    --shadow-editorial: 0 20px 60px hsla(0, 0%, 0%, 0.4);
+    --shadow-card: 0 8px 32px hsla(0, 0%, 0%, 0.3);
+    --shadow-hover: 0 24px 64px hsla(0, 0%, 0%, 0.5);
 
-    --shadow-soft: 0 8px 32px hsla(30, 15%, 18%, 0.08);
-    --shadow-card: 0 4px 24px hsla(30, 15%, 18%, 0.06);
-    --shadow-hover: 0 16px 48px hsla(30, 15%, 18%, 0.12);
-
-    --font-display: 'Lora', serif;
-    --font-body: 'Nunito Sans', sans-serif;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -86,31 +78,11 @@
 }
 
 @layer components {
-  .hero-overlay {
-    background: var(--hero-overlay);
+  .split-diagonal {
+    clip-path: polygon(0 0, 92% 0, 85% 100%, 0% 100%);
   }
 
-  .text-shadow-hero {
-    text-shadow: 0 2px 20px hsla(30, 15%, 18%, 0.2);
-  }
-}
-
-@layer utilities {
-  @keyframes slow-zoom {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.05); }
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
-  }
-
-  .animate-slow-zoom {
-    animation: slow-zoom 25s ease-in-out infinite alternate;
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
+  .split-diagonal-reverse {
+    clip-path: polygon(8% 0, 100% 0, 100% 100%, 15% 100%);
   }
 }
