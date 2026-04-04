@@ -107,7 +107,7 @@ const HeroSection = () => {
 
       {/* Vertical scroll indicator */}
       <motion.div
-        className="absolute bottom-8 left-8 md:left-12 z-20 flex items-center gap-4"
+        className="absolute bottom-8 left-8 md:left-12 z-20 hidden md:flex items-center gap-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2, duration: 1 }}
