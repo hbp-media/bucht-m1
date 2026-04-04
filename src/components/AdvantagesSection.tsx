@@ -102,7 +102,7 @@ const AdvantagesSection = () => {
             width={1920}
             height={1080}
           />
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background/80" />
+          <div className="absolute inset-0 bg-background/10" />
         </div>
 
         {/* Gold accent line */}
