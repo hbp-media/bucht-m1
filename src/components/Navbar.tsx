@@ -24,10 +24,10 @@ const Navbar = () => {
       transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
       style={{
         background: scrolled
-          ? "hsla(40, 10%, 6%, 0.95)"
+          ? "hsla(40, 20%, 97%, 0.92)"
           : "transparent",
         backdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom: scrolled ? "1px solid hsla(40, 8%, 18%, 0.5)" : "none",
+        borderBottom: scrolled ? "1px solid hsla(40, 12%, 85%, 0.5)" : "none",
       }}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-12 py-5 md:py-6">
