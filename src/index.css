@@ -6,47 +6,47 @@
 
 @layer base {
   :root {
-    --background: 40 10% 6%;
-    --foreground: 42 30% 92%;
+    --background: 40 20% 97%;
+    --foreground: 40 10% 10%;
 
-    --card: 40 8% 10%;
-    --card-foreground: 42 30% 92%;
+    --card: 40 15% 93%;
+    --card-foreground: 40 10% 10%;
 
-    --popover: 40 8% 10%;
-    --popover-foreground: 42 30% 92%;
+    --popover: 40 15% 93%;
+    --popover-foreground: 40 10% 10%;
 
-    --primary: 82 30% 42%;
-    --primary-foreground: 40 10% 6%;
+    --primary: 82 30% 38%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 40 8% 14%;
-    --secondary-foreground: 42 30% 92%;
+    --secondary: 40 12% 90%;
+    --secondary-foreground: 40 10% 10%;
 
-    --muted: 40 6% 18%;
-    --muted-foreground: 40 10% 55%;
+    --muted: 40 10% 88%;
+    --muted-foreground: 40 8% 40%;
 
-    --accent: 42 50% 55%;
-    --accent-foreground: 40 10% 6%;
+    --accent: 42 50% 42%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 40 8% 18%;
-    --input: 40 8% 18%;
-    --ring: 82 30% 42%;
+    --border: 40 12% 85%;
+    --input: 40 12% 85%;
+    --ring: 82 30% 38%;
 
     --radius: 0.5rem;
 
     /* Custom tokens */
-    --gold: 42 50% 55%;
-    --gold-light: 42 45% 70%;
-    --olive: 82 30% 42%;
-    --olive-light: 82 25% 55%;
-    --charcoal: 40 8% 12%;
-    --charcoal-light: 40 6% 20%;
+    --gold: 42 50% 42%;
+    --gold-light: 42 45% 55%;
+    --olive: 82 30% 38%;
+    --olive-light: 82 25% 48%;
+    --charcoal: 40 8% 20%;
+    --charcoal-light: 40 6% 35%;
 
-    --shadow-editorial: 0 20px 60px hsla(0, 0%, 0%, 0.4);
-    --shadow-card: 0 8px 32px hsla(0, 0%, 0%, 0.3);
-    --shadow-hover: 0 24px 64px hsla(0, 0%, 0%, 0.5);
+    --shadow-editorial: 0 20px 60px hsla(40, 15%, 10%, 0.12);
+    --shadow-card: 0 8px 32px hsla(40, 15%, 10%, 0.08);
+    --shadow-hover: 0 24px 64px hsla(40, 15%, 10%, 0.15);
 
     --font-display: 'Playfair Display', serif;
     --font-body: 'Inter', sans-serif;

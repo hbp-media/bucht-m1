@@ -15,7 +15,7 @@ const HeroSection = () => {
             height={1080}
           />
           {/* Dark overlay for depth */}
-          <div className="absolute inset-0 bg-gradient-to-r from-background/60 via-transparent to-background/90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-transparent to-background/95" />
         </div>
 
         {/* Gold accent line on diagonal edge */}
