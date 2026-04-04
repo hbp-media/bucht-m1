@@ -25,8 +25,8 @@ const Navbar = () => {
       style={{
         background: scrolled
           ? "hsla(40, 20%, 97%, 0.92)"
-          : "transparent",
-        backdropFilter: scrolled ? "blur(20px)" : "none",
+          : "hsla(40, 20%, 97%, 0.4)",
+        backdropFilter: scrolled ? "blur(20px)" : "blur(12px)",
         borderBottom: scrolled ? "1px solid hsla(40, 12%, 85%, 0.5)" : "none",
       }}
     >
@@ -39,7 +39,7 @@ const Navbar = () => {
         </a>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-10">
+        <nav className="hidden md:flex items-center gap-10 ml-6">
           {navLinks.map((link) => (
             <a
               key={link.label}
