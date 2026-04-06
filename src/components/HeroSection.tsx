@@ -84,25 +84,28 @@ const HeroSection = () => {
           </motion.p>
 
           {/* CTA */}
-          <motion.a
-            href="#buchen"
-            className="inline-flex items-center gap-4 group"
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 1.2 }}
           >
-            <span className="px-8 py-4 font-body text-xs tracking-[0.2em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light transition-colors duration-300">
-              Jetzt buchen
-            </span>
-            <motion.div
-              className="w-12 h-12 border border-accent/30 flex items-center justify-center group-hover:border-accent/60 transition-colors duration-300"
-              whileHover={{ x: 4 }}
+            <Link
+              to="/booking"
+              className="inline-flex items-center gap-4 group"
             >
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-accent" />
-              </svg>
-            </motion.div>
-          </motion.a>
+              <span className="px-8 py-4 font-body text-xs tracking-[0.2em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light transition-colors duration-300">
+                Jetzt buchen
+              </span>
+              <motion.div
+                className="w-12 h-12 border border-accent/30 flex items-center justify-center group-hover:border-accent/60 transition-colors duration-300"
+                whileHover={{ x: 4 }}
+              >
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-accent" />
+                </svg>
+              </motion.div>
+            </Link>
+          </motion.div>
         </div>
       </div>
 
