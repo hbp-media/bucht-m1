@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import lakeHero from "@/assets/lake-hero.jpg";
 
 const HeroSection = () => {
