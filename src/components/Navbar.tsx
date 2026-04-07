@@ -82,15 +82,13 @@ const Navbar = () => {
             )
           )}
 
-          {user && (
-            <Link
-              to="/account"
-              className="p-2 text-muted-foreground hover:text-accent transition-colors duration-300"
-              title="Mein Konto"
-            >
-              <User size={18} strokeWidth={1.5} />
-            </Link>
-          )}
+          <Link
+            to={user ? "/account" : "/login"}
+            className="p-2 text-muted-foreground hover:text-accent transition-colors duration-300"
+            title={user ? "Mein Konto" : "Anmelden"}
+          >
+            <User size={18} strokeWidth={1.5} />
+          </Link>
 
           <Link
             to="/booking"
@@ -141,15 +139,13 @@ const Navbar = () => {
               )
             )}
 
-            {user && (
-              <Link
-                to="/account"
-                onClick={() => setMobileOpen(false)}
-                className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-accent py-3 border-b border-border/20 transition-colors duration-300"
-              >
-                Mein Konto
-              </Link>
-            )}
+            <Link
+              to={user ? "/account" : "/login"}
+              onClick={() => setMobileOpen(false)}
+              className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-accent py-3 border-b border-border/20 transition-colors duration-300"
+            >
+              {user ? "Mein Konto" : "Anmelden"}
+            </Link>
 
             <Link
               to="/booking"
