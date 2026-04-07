@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 const navLinks = [
   { label: "Startseite", href: "/" },
   { label: "Plätze", href: "/#plaetze" },
-  { label: "Buchung", href: "/booking" },
   { label: "Kontakt", href: "/#kontakt" },
 ];
 
@@ -94,7 +93,7 @@ const Navbar = () => {
             to="/booking"
             className="ml-4 px-7 py-2.5 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light transition-colors duration-300"
           >
-            Buchen
+            Jetzt buchen
           </Link>
         </nav>
 
@@ -152,7 +151,7 @@ const Navbar = () => {
               onClick={() => setMobileOpen(false)}
               className="mt-3 px-6 py-3 text-center font-body text-xs tracking-[0.1em] uppercase font-semibold bg-primary text-primary-foreground"
             >
-              Buchen
+              Jetzt buchen
             </Link>
           </nav>
         </motion.div>
