@@ -93,7 +93,7 @@ const Navbar = () => {
             to="/booking"
             className="ml-4 px-7 py-2.5 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light transition-colors duration-300"
           >
-            Buchen
+            Jetzt buchen
           </Link>
         </nav>
 
