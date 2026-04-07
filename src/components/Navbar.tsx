@@ -151,7 +151,7 @@ const Navbar = () => {
               onClick={() => setMobileOpen(false)}
               className="mt-3 px-6 py-3 text-center font-body text-xs tracking-[0.1em] uppercase font-semibold bg-primary text-primary-foreground"
             >
-              Buchen
+              Jetzt buchen
             </Link>
           </nav>
         </motion.div>
