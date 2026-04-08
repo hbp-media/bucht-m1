@@ -49,7 +49,6 @@ const Register = () => {
           last_name: lastName,
           phone: phone,
         },
-        emailRedirectTo: window.location.origin,
       },
     });
 
@@ -63,12 +62,24 @@ const Register = () => {
       return;
     }
 
-    toast({
-      title: "Registrierung erfolgreich",
-      description: "Dein Konto wurde erstellt. Dein Zugang muss noch freigeschaltet werden.",
+    // Auto-confirm is enabled, so sign in immediately
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    navigate("/pending");
+    if (signInError) {
+      toast({
+        title: "Fehler",
+        description: signInError.message,
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Redirect to verify page where OTP code will be sent
+    navigate("/verify");
     setLoading(false);
   };
 
