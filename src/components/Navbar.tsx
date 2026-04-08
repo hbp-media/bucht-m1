@@ -1,8 +1,9 @@
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useState } from "react";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const navLinks = [
   { label: "Startseite", href: "/" },
@@ -15,6 +16,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { scrollY } = useScroll();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const location = useLocation();
 
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 60));
@@ -81,6 +83,16 @@ const Navbar = () => {
             )
           )}
 
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="p-2 text-muted-foreground hover:text-accent transition-colors duration-300"
+              title="Admin"
+            >
+              <Shield size={18} strokeWidth={1.5} />
+            </Link>
+          )}
+
           <Link
             to={user ? "/account" : "/login"}
             className="p-2 text-muted-foreground hover:text-accent transition-colors duration-300"
@@ -136,6 +148,16 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               )
+            )}
+
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileOpen(false)}
+                className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-accent py-3 border-b border-border/20 transition-colors duration-300 flex items-center gap-2"
+              >
+                <Shield size={16} /> Admin
+              </Link>
             )}
 
             <Link
