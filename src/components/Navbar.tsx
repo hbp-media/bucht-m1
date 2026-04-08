@@ -1,8 +1,9 @@
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useState } from "react";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const navLinks = [
   { label: "Startseite", href: "/" },
@@ -15,6 +16,7 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { scrollY } = useScroll();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const location = useLocation();
 
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 60));
