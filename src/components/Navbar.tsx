@@ -150,6 +150,16 @@ const Navbar = () => {
               )
             )}
 
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileOpen(false)}
+                className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-accent py-3 border-b border-border/20 transition-colors duration-300 flex items-center gap-2"
+              >
+                <Shield size={16} /> Admin
+              </Link>
+            )}
+
             <Link
               to={user ? "/account" : "/login"}
               onClick={() => setMobileOpen(false)}
