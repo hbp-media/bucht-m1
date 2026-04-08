@@ -83,6 +83,16 @@ const Navbar = () => {
             )
           )}
 
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="p-2 text-muted-foreground hover:text-accent transition-colors duration-300"
+              title="Admin"
+            >
+              <Shield size={18} strokeWidth={1.5} />
+            </Link>
+          )}
+
           <Link
             to={user ? "/account" : "/login"}
             className="p-2 text-muted-foreground hover:text-accent transition-colors duration-300"
