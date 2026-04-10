@@ -71,18 +71,29 @@ const Verify = () => {
       return;
     }
 
-    // Check account status
-    const { data: profile } = await supabase
+    // Create profile after successful verification
+    const metadata = user.user_metadata || {};
+    const { error: profileError } = await supabase
       .from("profiles")
-      .select("account_status")
-      .eq("user_id", user.id)
-      .single();
+      .upsert({
+        user_id: user.id,
+        first_name: metadata.first_name || "",
+        last_name: metadata.last_name || "",
+        phone: metadata.phone || "",
+        account_status: "pending",
+      }, { onConflict: "user_id" });
 
-    if (profile?.account_status === "pending") {
-      navigate("/pending");
-    } else {
-      navigate("/booking-system");
+    if (profileError) {
+      toast({
+        title: "Fehler",
+        description: "Profil konnte nicht erstellt werden.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
     }
+
+    navigate("/pending");
     setLoading(false);
   };
 
