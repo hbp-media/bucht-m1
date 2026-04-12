@@ -6,33 +6,36 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 
-const Login = () => {
+const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.functions.invoke("send-password-reset", {
+      body: { email },
+    });
 
     if (error) {
       toast({
         title: "Fehler",
-        description: error.message,
+        description: "Anfrage konnte nicht verarbeitet werden.",
         variant: "destructive",
       });
       setLoading(false);
       return;
     }
 
-    // After login, redirect to verification with email
-    navigate("/verify", {
-      state: { email, isLogin: true },
+    toast({
+      title: "Code gesendet",
+      description: "Falls ein Konto mit dieser E-Mail existiert, wurde ein Code gesendet.",
     });
+
+    navigate("/reset-password", { state: { email } });
     setLoading(false);
   };
 
@@ -50,16 +53,19 @@ const Login = () => {
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="w-12 h-px bg-accent" />
               <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-                Anmeldung
+                Passwort
               </span>
               <div className="w-12 h-px bg-accent" />
             </div>
             <h1 className="font-display text-3xl md:text-4xl text-foreground">
-              Willkommen <span className="italic text-primary">zurück</span>
+              Passwort <span className="italic text-primary">vergessen?</span>
             </h1>
+            <p className="font-body text-sm text-muted-foreground mt-4">
+              Gib deine E-Mail ein und wir senden dir einen Code zum Zurücksetzen.
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="font-body text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2 block">
                 E-Mail
@@ -74,39 +80,18 @@ const Login = () => {
               />
             </div>
 
-            <div>
-              <label className="font-body text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2 block">
-                Passwort
-              </label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="border-border bg-background font-body"
-                placeholder="••••••••"
-              />
-            </div>
-
             <button
               type="submit"
               disabled={loading}
               className="w-full px-8 py-4 font-body text-xs tracking-[0.2em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light transition-colors duration-300 disabled:opacity-50"
             >
-              {loading ? "Wird geladen..." : "Anmelden"}
+              {loading ? "Wird gesendet..." : "Code senden"}
             </button>
           </form>
 
-          <div className="text-center mt-6">
-            <Link to="/forgot-password" className="font-body text-sm text-muted-foreground hover:text-primary transition-colors">
-              Passwort vergessen?
-            </Link>
-          </div>
-
-          <p className="text-center mt-4 font-body text-sm text-muted-foreground">
-            Noch kein Konto?{" "}
-            <Link to="/register" className="text-primary hover:text-accent transition-colors">
-              Jetzt registrieren
+          <p className="text-center mt-8 font-body text-sm text-muted-foreground">
+            <Link to="/login" className="text-primary hover:text-accent transition-colors">
+              Zurück zur Anmeldung
             </Link>
           </p>
         </motion.div>
@@ -115,4 +100,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

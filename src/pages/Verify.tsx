@@ -1,36 +1,41 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 
 const Verify = () => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
+  const email = location.state?.email;
+  const password = location.state?.password;
+  const firstName = location.state?.firstName;
+  const lastName = location.state?.lastName;
+  const phone = location.state?.phone;
+  const isLogin = location.state?.isLogin;
+
   useEffect(() => {
-    if (!user) {
+    if (!email) {
       navigate("/login");
       return;
     }
-    sendOtp();
-  }, [user]);
+    if (!sent) {
+      sendOtp();
+    }
+  }, [email]);
 
   const sendOtp = async () => {
-    if (!user?.email) return;
-    
-    const { error } = await supabase.auth.signInWithOtp({
-      email: user.email,
-      options: {
-        shouldCreateUser: false,
-      },
+    if (!email) return;
+
+    const { error } = await supabase.functions.invoke("send-otp", {
+      body: { email },
     });
 
     if (error) {
@@ -45,23 +50,22 @@ const Verify = () => {
     setSent(true);
     toast({
       title: "Code gesendet",
-      description: `Ein Verifikationscode wurde an ${user.email} gesendet.`,
+      description: `Ein Verifikationscode wurde an ${email} gesendet.`,
     });
   };
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.email) return;
+    if (!email) return;
 
     setLoading(true);
 
-    const { error } = await supabase.auth.verifyOtp({
-      email: user.email,
-      token: otp,
-      type: "email",
+    // Verify the OTP code
+    const { data, error } = await supabase.functions.invoke("verify-otp", {
+      body: { email, code: otp },
     });
 
-    if (error) {
+    if (error || !data?.success) {
       toast({
         title: "Fehler",
         description: "Ungültiger Code. Bitte versuche es erneut.",
@@ -71,29 +75,72 @@ const Verify = () => {
       return;
     }
 
-    // Create profile after successful verification
-    const metadata = user.user_metadata || {};
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .upsert({
-        user_id: user.id,
-        first_name: metadata.first_name || "",
-        last_name: metadata.last_name || "",
-        phone: metadata.phone || "",
-        account_status: "pending",
-      }, { onConflict: "user_id" });
+    if (isLogin) {
+      // For login, just redirect to account/pending check
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("account_status")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id || "")
+        .maybeSingle();
 
-    if (profileError) {
-      toast({
-        title: "Fehler",
-        description: "Profil konnte nicht erstellt werden.",
-        variant: "destructive",
+      if (profile?.account_status === "approved") {
+        navigate("/account");
+      } else {
+        navigate("/pending");
+      }
+    } else {
+      // For registration: now create the account
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { first_name: firstName, last_name: lastName, phone },
+        },
       });
-      setLoading(false);
-      return;
+
+      if (signUpError) {
+        toast({
+          title: "Fehler",
+          description: signUpError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Sign in immediately (auto-confirm is enabled)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        toast({
+          title: "Fehler",
+          description: signInError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const user = (await supabase.auth.getUser()).data.user;
+      if (user) {
+        await supabase.from("profiles").upsert(
+          {
+            user_id: user.id,
+            first_name: firstName || "",
+            last_name: lastName || "",
+            phone: phone || "",
+            account_status: "pending",
+          },
+          { onConflict: "user_id" }
+        );
+      }
+
+      navigate("/pending");
     }
 
-    navigate("/pending");
     setLoading(false);
   };
 
