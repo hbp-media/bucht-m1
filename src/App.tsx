@@ -35,6 +35,8 @@ const App = () => (
             <Route path="/pending" element={<Pending />} />
             <Route path="/booking-system" element={<BookingSystem />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
