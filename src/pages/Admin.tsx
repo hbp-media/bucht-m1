@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Shield, Search, Users } from "lucide-react";
+import { Trash2, Shield, ShieldCheck, Search, Users } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -33,9 +33,11 @@ const Admin = () => {
   const { toast } = useToast();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingAdminId, setTogglingAdminId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -43,20 +45,24 @@ const Admin = () => {
       navigate("/");
       return;
     }
-    fetchProfiles();
+    fetchData();
   }, [user, isAdmin, authLoading, adminLoading]);
 
-  const fetchProfiles = async () => {
+  const fetchData = async () => {
     setLoadingProfiles(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [profilesRes, rolesRes] = await Promise.all([
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
+    ]);
 
-    if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    if (profilesRes.error) {
+      toast({ title: "Fehler", description: profilesRes.error.message, variant: "destructive" });
     } else {
-      setProfiles(data || []);
+      setProfiles(profilesRes.data || []);
+    }
+
+    if (rolesRes.data) {
+      setAdminUserIds(new Set(rolesRes.data.map((r) => r.user_id)));
     }
     setLoadingProfiles(false);
   };
@@ -74,9 +80,48 @@ const Admin = () => {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Benutzer gelöscht", description: `${profile.first_name} ${profile.last_name} wurde entfernt.` });
-      fetchProfiles();
+      fetchData();
     }
     setDeletingId(null);
+  };
+
+  const handleToggleAdmin = async (profile: Profile) => {
+    const isCurrentlyAdmin = adminUserIds.has(profile.user_id);
+    const action = isCurrentlyAdmin ? "entfernen" : "erteilen";
+    if (!confirm(`Admin-Rechte für ${profile.first_name} ${profile.last_name} ${action}?`)) return;
+
+    setTogglingAdminId(profile.user_id);
+
+    if (isCurrentlyAdmin) {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", profile.user_id)
+        .eq("role", "admin");
+
+      if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      } else {
+        setAdminUserIds((prev) => {
+          const next = new Set(prev);
+          next.delete(profile.user_id);
+          return next;
+        });
+        toast({ title: "Admin-Rechte entfernt", description: `${profile.first_name} ${profile.last_name} ist kein Admin mehr.` });
+      }
+    } else {
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id: profile.user_id, role: "admin" });
+
+      if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      } else {
+        setAdminUserIds((prev) => new Set(prev).add(profile.user_id));
+        toast({ title: "Admin-Rechte erteilt", description: `${profile.first_name} ${profile.last_name} ist jetzt Admin.` });
+      }
+    }
+    setTogglingAdminId(null);
   };
 
   const filtered = profiles.filter((p) => {
@@ -145,6 +190,7 @@ const Admin = () => {
                     <TableRow>
                       <TableHead className="font-body text-[10px] tracking-[0.2em] uppercase">Name</TableHead>
                       <TableHead className="font-body text-[10px] tracking-[0.2em] uppercase">Telefon</TableHead>
+                      <TableHead className="font-body text-[10px] tracking-[0.2em] uppercase">Rolle</TableHead>
                       <TableHead className="font-body text-[10px] tracking-[0.2em] uppercase">Registriert</TableHead>
                       <TableHead className="font-body text-[10px] tracking-[0.2em] uppercase text-right">Aktionen</TableHead>
                     </TableRow>
@@ -152,7 +198,7 @@ const Admin = () => {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground font-body py-8">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground font-body py-8">
                           Keine Benutzer gefunden
                         </TableCell>
                       </TableRow>
@@ -165,19 +211,42 @@ const Admin = () => {
                           <TableCell className="font-body text-sm text-muted-foreground">
                             {profile.phone || "–"}
                           </TableCell>
+                          <TableCell className="font-body text-sm">
+                            {adminUserIds.has(profile.user_id) ? (
+                              <span className="inline-flex items-center gap-1 text-primary">
+                                <ShieldCheck className="w-3.5 h-3.5" /> Admin
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">Benutzer</span>
+                            )}
+                          </TableCell>
                           <TableCell className="font-body text-sm text-muted-foreground">
                             {new Date(profile.created_at).toLocaleDateString("de-AT")}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right space-x-1">
                             {profile.user_id !== user?.id && (
-                              <button
-                                onClick={() => handleDelete(profile)}
-                                disabled={deletingId === profile.user_id}
-                                className="p-2 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                                title="Benutzer löschen"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleToggleAdmin(profile)}
+                                  disabled={togglingAdminId === profile.user_id}
+                                  className={`p-2 transition-colors disabled:opacity-50 ${
+                                    adminUserIds.has(profile.user_id)
+                                      ? "text-primary hover:text-muted-foreground"
+                                      : "text-muted-foreground hover:text-primary"
+                                  }`}
+                                  title={adminUserIds.has(profile.user_id) ? "Admin-Rechte entfernen" : "Zum Admin machen"}
+                                >
+                                  <ShieldCheck className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(profile)}
+                                  disabled={deletingId === profile.user_id}
+                                  className="p-2 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                                  title="Benutzer löschen"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
                             )}
                           </TableCell>
                         </TableRow>
