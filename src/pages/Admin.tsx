@@ -39,7 +39,6 @@ const Admin = () => {
   const [search, setSearch] = useState("");
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
