@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Shield, Search, Users, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Trash2, Shield, Search, Users } from "lucide-react";
 
 interface Profile {
   id: string;
