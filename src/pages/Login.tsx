@@ -29,10 +29,7 @@ const Login = () => {
       return;
     }
 
-    // After login, redirect to verification with email
-    navigate("/verify", {
-      state: { email, isLogin: true },
-    });
+    navigate("/account");
     setLoading(false);
   };
 
