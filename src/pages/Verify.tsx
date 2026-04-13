@@ -76,18 +76,7 @@ const Verify = () => {
     }
 
     if (isLogin) {
-      // For login, just redirect to account/pending check
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("account_status")
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id || "")
-        .maybeSingle();
-
-      if (profile?.account_status === "approved") {
-        navigate("/account");
-      } else {
-        navigate("/pending");
-      }
+      navigate("/account");
     } else {
       // For registration: now create the account
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -132,13 +121,13 @@ const Verify = () => {
             first_name: firstName || "",
             last_name: lastName || "",
             phone: phone || "",
-            account_status: "pending",
+            account_status: "approved",
           },
           { onConflict: "user_id" }
         );
       }
 
-      navigate("/pending");
+      navigate("/account");
     }
 
     setLoading(false);
