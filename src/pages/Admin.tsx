@@ -111,18 +111,6 @@ const Admin = () => {
 
   const stats = {
     total: profiles.length,
-    approved: profiles.filter((p) => p.account_status === "approved").length,
-    pending: profiles.filter((p) => p.account_status === "pending").length,
-    rejected: profiles.filter((p) => p.account_status === "rejected").length,
-  };
-
-  const statusIcon = (status: string) => {
-    switch (status) {
-      case "approved": return <CheckCircle className="w-4 h-4 text-primary" />;
-      case "pending": return <Clock className="w-4 h-4 text-amber-500" />;
-      case "rejected": return <XCircle className="w-4 h-4 text-destructive" />;
-      default: return null;
-    }
   };
 
   if (authLoading || adminLoading) return null;
