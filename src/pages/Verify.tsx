@@ -127,7 +127,7 @@ const Verify = () => {
         );
       }
 
-      navigate("/pending");
+      navigate("/account");
     }
 
     setLoading(false);
