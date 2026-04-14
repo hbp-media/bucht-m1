@@ -265,7 +265,7 @@ const Anfahrt = () => {
               </a>
 
               <a
-                href="https://www.facebook.com/buchtm1"
+                href="https://www.facebook.com/BuchtM1Carpfishing/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center gap-3 p-6 rounded-lg bg-background hover:bg-secondary/50 transition-colors duration-300 group"
