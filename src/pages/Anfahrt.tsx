@@ -42,8 +42,8 @@ const autobahnSteps = [
 ];
 
 const MAPS_EMBED_URL =
-  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2693.5!2d17.2!3d47.87!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDfCsDUyJzEyLjAiTiAxN8KwMTInMDAuMCJF!5e0!3m2!1sde!2sat!4v1700000000000";
-const MAPS_LINK = "https://www.google.com/maps/dir//47.87,17.2";
+  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2693.5!2d17.2152559!3d47.8694931!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x476c7790e1bc009f%3A0x1198416a80da232f!2sBucht%20M1%20carpfishing!5e0!3m2!1sde!2sat!4v1700000000000";
+const MAPS_LINK = "https://www.google.com/maps/place/Bucht+M1+carpfishing/@47.8694931,17.2152559,17z";
 
 const Anfahrt = () => {
   return (
