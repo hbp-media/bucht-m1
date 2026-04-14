@@ -15,6 +15,7 @@ import Account from "./pages/Account.tsx";
 import Admin from "./pages/Admin.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import Teichordnung from "./pages/Teichordnung.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/teichordnung" element={<Teichordnung />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

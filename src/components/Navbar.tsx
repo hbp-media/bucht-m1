@@ -7,6 +7,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 
 const navLinks = [
   { label: "Startseite", href: "/" },
+  { label: "Teichordnung", href: "/teichordnung" },
   { label: "Plätze", href: "/#plaetze" },
   { label: "Kontakt", href: "/#kontakt" },
 ];
