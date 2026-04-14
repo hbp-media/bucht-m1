@@ -7,9 +7,6 @@ import {
   Phone,
   Mail,
   Facebook,
-  ChevronRight,
-  Highway,
-  Route,
   ExternalLink,
 } from "lucide-react";
 
