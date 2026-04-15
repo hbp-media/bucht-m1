@@ -98,35 +98,35 @@ const Teichordnung = () => {
     <main className="bg-background min-h-screen">
       <Navbar />
 
-      {/* Hero with image */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 px-6 md:px-12 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img
-            src={teichordnungHero}
-            alt="Angelgewässer Bucht M1 im Morgennebel"
-            className="w-full h-full object-cover"
-            width={1920}
-            height={640}
-          />
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-        </div>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="inline-block font-body text-[11px] tracking-[0.25em] uppercase text-accent mb-4">
-              Bucht M1
-            </span>
-            <h1 className="font-display text-3xl md:text-5xl text-foreground mb-4">
-              Teichordnung
-            </h1>
-            <p className="font-body text-muted-foreground text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
-              Allgemeine Informationen & Regeln ab 2024 – für ein respektvolles
-              Miteinander und den Schutz unseres Gewässers.
-            </p>
-          </motion.div>
+      {/* Hero Image */}
+      <section className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+        <img
+          src={teichordnungHero}
+          alt="Angelgewässer Bucht M1 im Morgennebel"
+          className="w-full h-full object-cover"
+          width={1920}
+          height={640}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 px-6 md:px-12 pb-12 md:pb-16">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <span className="inline-block font-body text-[11px] tracking-[0.25em] uppercase text-accent mb-4">
+                Bucht M1
+              </span>
+              <h1 className="font-display text-3xl md:text-5xl text-foreground mb-4">
+                Teichordnung
+              </h1>
+              <p className="font-body text-muted-foreground text-sm md:text-base max-w-2xl leading-relaxed">
+                Allgemeine Informationen & Regeln ab 2024 – für ein respektvolles
+                Miteinander und den Schutz unseres Gewässers.
+              </p>
+            </motion.div>
+          </div>
         </div>
       </section>
 
