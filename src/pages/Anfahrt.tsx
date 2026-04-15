@@ -51,35 +51,35 @@ const Anfahrt = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero with image */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 px-6 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img
-            src={anfahrtHero}
-            alt="Landstraße zum Angelgewässer Bucht M1"
-            className="w-full h-full object-cover"
-            width={1920}
-            height={640}
-          />
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-        </div>
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="inline-block font-body text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-4">
-              So findest du uns
-            </span>
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground mb-6">
-              Anfahrt
-            </h1>
-            <p className="font-body text-muted-foreground max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
-              Ob über die Bundesstraße oder die Autobahn – der Weg zu uns ist
-              unkompliziert. Hier findest du beide Routen Schritt für Schritt.
-            </p>
-          </motion.div>
+      {/* Hero Image */}
+      <section className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+        <img
+          src={anfahrtHero}
+          alt="Landstraße zum Angelgewässer Bucht M1"
+          className="w-full h-full object-cover"
+          width={1920}
+          height={640}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-12 md:pb-16">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <span className="inline-block font-body text-[11px] tracking-[0.3em] uppercase text-accent mb-4">
+                So findest du uns
+              </span>
+              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground mb-4">
+                Anfahrt
+              </h1>
+              <p className="font-body text-muted-foreground max-w-2xl text-base md:text-lg leading-relaxed">
+                Ob über die Bundesstraße oder die Autobahn – der Weg zu uns ist
+                unkompliziert. Hier findest du beide Routen Schritt für Schritt.
+              </p>
+            </motion.div>
+          </div>
         </div>
       </section>
 
