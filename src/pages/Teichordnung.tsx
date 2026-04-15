@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import teichordnungHero from "@/assets/teichordnung-hero.jpg";
 import teichordnungCarp from "@/assets/teichordnung-carp.jpg";
 import {
@@ -94,20 +95,33 @@ const forbidden = [
 ];
 
 const Teichordnung = () => {
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const imgScale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.3, 0.8]);
+
   return (
     <main className="bg-background min-h-screen">
       <Navbar />
 
       {/* Hero Image */}
-      <section className="relative h-[50vh] md:h-[60vh] overflow-hidden">
-        <img
+      <section ref={heroRef} className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+        <motion.img
           src={teichordnungHero}
           alt="Angelgewässer Bucht M1 im Morgennebel"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover will-change-transform"
           width={1920}
           height={640}
+          style={{ y: imgY, scale: imgScale }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"
+          style={{ opacity: overlayOpacity }}
+        />
         <div className="absolute bottom-0 left-0 right-0 px-6 md:px-12 pb-8 md:pb-10">
           <div className="max-w-4xl mx-auto">
             <motion.div
