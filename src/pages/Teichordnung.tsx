@@ -1,5 +1,7 @@
 import Navbar from "@/components/Navbar";
 import { motion } from "framer-motion";
+import teichordnungHero from "@/assets/teichordnung-hero.jpg";
+import teichordnungCarp from "@/assets/teichordnung-carp.jpg";
 import {
   AlertTriangle,
   Check,
@@ -96,9 +98,19 @@ const Teichordnung = () => {
     <main className="bg-background min-h-screen">
       <Navbar />
 
-      {/* Hero */}
-      <section className="pt-32 pb-16 md:pt-40 md:pb-20 px-6 md:px-12">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* Hero with image */}
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 px-6 md:px-12 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src={teichordnungHero}
+            alt="Angelgewässer Bucht M1 im Morgennebel"
+            className="w-full h-full object-cover"
+            width={1920}
+            height={640}
+          />
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+        </div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -180,6 +192,31 @@ const Teichordnung = () => {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Catch & Release image banner */}
+      <section className="px-6 md:px-12 pb-16">
+        <motion.div
+          className="max-w-4xl mx-auto rounded-lg overflow-hidden relative"
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <img
+            src={teichordnungCarp}
+            alt="Karpfen wird schonend zurückgesetzt – Catch & Release"
+            className="w-full h-48 md:h-64 object-cover"
+            loading="lazy"
+            width={1200}
+            height={800}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent flex items-end p-6">
+            <p className="font-display text-xl md:text-2xl text-foreground">
+              Catch & Release – Respekt für jeden Fisch
+            </p>
+          </div>
+        </motion.div>
       </section>
 
       {/* Allowed / Forbidden */}

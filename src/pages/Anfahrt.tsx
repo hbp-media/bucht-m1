@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { motion } from "framer-motion";
+import anfahrtHero from "@/assets/anfahrt-hero.jpg";
 import {
   Car,
   Navigation,
@@ -50,9 +51,19 @@ const Anfahrt = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero */}
-      <section className="pt-32 pb-16 md:pt-40 md:pb-20 px-6">
-        <div className="max-w-5xl mx-auto text-center">
+      {/* Hero with image */}
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 px-6 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src={anfahrtHero}
+            alt="Landstraße zum Angelgewässer Bucht M1"
+            className="w-full h-full object-cover"
+            width={1920}
+            height={640}
+          />
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+        </div>
+        <div className="max-w-5xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
