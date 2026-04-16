@@ -102,7 +102,7 @@ const Teichordnung = () => {
   });
   const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const imgScale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
-  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.3, 0.8]);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.5, 0.9]);
 
   return (
     <main className="bg-background min-h-screen">
