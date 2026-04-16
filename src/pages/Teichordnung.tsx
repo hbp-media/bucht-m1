@@ -147,6 +147,9 @@ const Teichordnung = () => {
         </div>
       </section>
 
+      {/* Spacer for smooth transition */}
+      <div className="h-16 md:h-24" />
+
       {/* Important Notice */}
       <section className="px-6 md:px-12 pb-12">
         <motion.div
