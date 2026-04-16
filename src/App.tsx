@@ -17,6 +17,7 @@ import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import Teichordnung from "./pages/Teichordnung.tsx";
 import Anfahrt from "./pages/Anfahrt.tsx";
+import Impressum from "./pages/Impressum.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
