@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import Teichordnung from "./pages/Teichordnung.tsx";
 import Anfahrt from "./pages/Anfahrt.tsx";
 import Impressum from "./pages/Impressum.tsx";
+import Kontakt from "./pages/Kontakt.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/teichordnung" element={<Teichordnung />} />
             <Route path="/anfahrt" element={<Anfahrt />} />
             <Route path="/impressum" element={<Impressum />} />
+            <Route path="/kontakt" element={<Kontakt />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
