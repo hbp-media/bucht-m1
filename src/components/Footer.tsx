@@ -5,7 +5,7 @@ const footerLinks = [
   { label: "Angelplätze", href: "/#plaetze" },
   { label: "Teichordnung", href: "/teichordnung" },
   { label: "Anfahrt", href: "/anfahrt" },
-  { label: "Kontakt", href: "/#kontakt" },
+  { label: "Kontakt", href: "/kontakt" },
   { label: "Impressum", href: "/impressum" },
 ];
 

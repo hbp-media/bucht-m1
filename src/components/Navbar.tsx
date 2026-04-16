@@ -10,7 +10,7 @@ const navLinks = [
   { label: "Teichordnung", href: "/teichordnung" },
   { label: "Anfahrt", href: "/anfahrt" },
   { label: "Plätze", href: "/#plaetze" },
-  { label: "Kontakt", href: "/#kontakt" },
+  { label: "Kontakt", href: "/kontakt" },
 ];
 
 const Navbar = () => {
