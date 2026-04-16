@@ -43,6 +43,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/teichordnung" element={<Teichordnung />} />
             <Route path="/anfahrt" element={<Anfahrt />} />
+            <Route path="/impressum" element={<Impressum />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
