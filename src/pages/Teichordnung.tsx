@@ -109,7 +109,7 @@ const Teichordnung = () => {
       <Navbar />
 
       {/* Hero Image */}
-      <section ref={heroRef} className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+      <section ref={heroRef} className="relative h-[55vh] md:h-[65vh] overflow-hidden">
         <motion.img
           src={teichordnungHero}
           alt="Angelgewässer Bucht M1 im Morgennebel"
@@ -119,23 +119,26 @@ const Teichordnung = () => {
           style={{ y: imgY, scale: imgScale }}
         />
         <motion.div
-          className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"
+          className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent"
           style={{ opacity: overlayOpacity }}
         />
-        <div className="absolute bottom-0 left-0 right-0 px-6 md:px-12 pb-8 md:pb-10">
+        <div className="absolute bottom-0 left-0 right-0 px-6 md:px-12 pb-12 md:pb-16">
           <div className="max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="inline-block font-body text-[11px] tracking-[0.25em] uppercase text-accent mb-4">
-                Bucht M1
-              </span>
-              <h1 className="font-display text-3xl md:text-5xl text-foreground mb-4">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="w-8 h-px bg-accent" />
+                <span className="font-body text-[11px] tracking-[0.4em] uppercase text-accent/90">
+                  Bucht M1
+                </span>
+              </div>
+              <h1 className="font-display text-3xl md:text-5xl text-white/95 mb-3 drop-shadow-sm">
                 Teichordnung
               </h1>
-              <p className="font-body text-muted-foreground text-sm md:text-base max-w-2xl leading-relaxed">
+              <p className="font-body text-white/70 text-sm md:text-base max-w-xl leading-relaxed">
                 Allgemeine Informationen & Regeln ab 2024 – für ein respektvolles
                 Miteinander und den Schutz unseres Gewässers.
               </p>

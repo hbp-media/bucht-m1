@@ -62,7 +62,7 @@ const Anfahrt = () => {
       <Navbar />
 
       {/* Hero Image */}
-      <section ref={heroRef} className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+      <section ref={heroRef} className="relative h-[55vh] md:h-[65vh] overflow-hidden">
         <motion.img
           src={anfahrtHero}
           alt="Landstraße zum Angelgewässer Bucht M1"
@@ -72,23 +72,26 @@ const Anfahrt = () => {
           style={{ y: imgY, scale: imgScale }}
         />
         <motion.div
-          className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"
+          className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent"
           style={{ opacity: overlayOpacity }}
         />
-        <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 md:pb-10">
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-12 md:pb-16">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="inline-block font-body text-[11px] tracking-[0.3em] uppercase text-accent mb-4">
-                So findest du uns
-              </span>
-              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground mb-4">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="w-8 h-px bg-accent" />
+                <span className="font-body text-[11px] tracking-[0.4em] uppercase text-accent/90">
+                  So findest du uns
+                </span>
+              </div>
+              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-white/95 mb-3 drop-shadow-sm">
                 Anfahrt
               </h1>
-              <p className="font-body text-muted-foreground max-w-2xl text-base md:text-lg leading-relaxed">
+              <p className="font-body text-white/70 max-w-xl text-sm md:text-base leading-relaxed">
                 Ob über die Bundesstraße oder die Autobahn – der Weg zu uns ist
                 unkompliziert. Hier findest du beide Routen Schritt für Schritt.
               </p>
@@ -96,6 +99,9 @@ const Anfahrt = () => {
           </div>
         </div>
       </section>
+
+      {/* Spacer for smooth transition */}
+      <div className="h-16 md:h-24" />
 
       {/* Routes */}
       <section className="pb-20 px-6">
