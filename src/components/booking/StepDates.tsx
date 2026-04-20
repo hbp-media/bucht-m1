@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { BookingMode } from "@/lib/pricing";
 
 interface StepDatesProps {
-  spotId: string;
+  spotId?: string | null;
   range: DateRange | undefined;
   onChange: (r: DateRange | undefined) => void;
   mode?: BookingMode | null;
@@ -23,6 +23,12 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
     const load = async () => {
       setLoading(true);
       const today = new Date().toISOString().split("T")[0];
+
+      if (!spotId) {
+        setBlockedDates([]);
+        setLoading(false);
+        return;
+      }
 
       const [blockedRes, bookingsRes] = await Promise.all([
         supabase
