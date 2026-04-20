@@ -48,17 +48,28 @@ export type Database = {
       }
       bookings: {
         Row: {
+          accommodation_persons: number
+          accommodation_price: number
+          accommodation_type: string
           admin_notes: string | null
+          all_inclusive: boolean
+          all_inclusive_price: number
           base_price: number
+          booking_mode: string
+          cleaning_price: number
+          companions: number
           created_at: string
           email: string
           end_date: string
+          extra_24h_blocks: number
           extras: Json
           extras_price: number
           first_name: string
           id: string
           last_name: string
+          license_price: number
           message: string | null
+          nights: number
           payment_status: Database["public"]["Enums"]["payment_status"]
           persons: number
           phone: string
@@ -70,17 +81,28 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accommodation_persons?: number
+          accommodation_price?: number
+          accommodation_type?: string
           admin_notes?: string | null
+          all_inclusive?: boolean
+          all_inclusive_price?: number
           base_price?: number
+          booking_mode?: string
+          cleaning_price?: number
+          companions?: number
           created_at?: string
           email: string
           end_date: string
+          extra_24h_blocks?: number
           extras?: Json
           extras_price?: number
           first_name: string
           id?: string
           last_name: string
+          license_price?: number
           message?: string | null
+          nights?: number
           payment_status?: Database["public"]["Enums"]["payment_status"]
           persons?: number
           phone: string
@@ -92,17 +114,28 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accommodation_persons?: number
+          accommodation_price?: number
+          accommodation_type?: string
           admin_notes?: string | null
+          all_inclusive?: boolean
+          all_inclusive_price?: number
           base_price?: number
+          booking_mode?: string
+          cleaning_price?: number
+          companions?: number
           created_at?: string
           email?: string
           end_date?: string
+          extra_24h_blocks?: number
           extras?: Json
           extras_price?: number
           first_name?: string
           id?: string
           last_name?: string
+          license_price?: number
           message?: string | null
+          nights?: number
           payment_status?: Database["public"]["Enums"]["payment_status"]
           persons?: number
           phone?: string
@@ -126,38 +159,48 @@ export type Database = {
       extras: {
         Row: {
           active: boolean
+          allow_quantity: boolean
+          code: string | null
           created_at: string
           description: string
           id: string
           name: string
           price: number
           sort_order: number
+          unit: string
           updated_at: string
         }
         Insert: {
           active?: boolean
+          allow_quantity?: boolean
+          code?: string | null
           created_at?: string
           description?: string
           id?: string
           name: string
           price?: number
           sort_order?: number
+          unit?: string
           updated_at?: string
         }
         Update: {
           active?: boolean
+          allow_quantity?: boolean
+          code?: string | null
           created_at?: string
           description?: string
           id?: string
           name?: string
           price?: number
           sort_order?: number
+          unit?: string
           updated_at?: string
         }
         Relationships: []
       }
       fishing_spots: {
         Row: {
+          accommodation_type: string
           active: boolean
           created_at: string
           description: string
@@ -171,6 +214,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accommodation_type?: string
           active?: boolean
           created_at?: string
           description?: string
@@ -184,6 +228,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accommodation_type?: string
           active?: boolean
           created_at?: string
           description?: string
