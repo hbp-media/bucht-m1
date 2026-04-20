@@ -14,6 +14,190 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_dates: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          reason: string | null
+          spot_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          reason?: string | null
+          spot_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          reason?: string | null
+          spot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_dates_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_spots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          admin_notes: string | null
+          base_price: number
+          created_at: string
+          email: string
+          end_date: string
+          extras: Json
+          extras_price: number
+          first_name: string
+          id: string
+          last_name: string
+          message: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          persons: number
+          phone: string
+          spot_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["booking_status"]
+          total_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          base_price?: number
+          created_at?: string
+          email: string
+          end_date: string
+          extras?: Json
+          extras_price?: number
+          first_name: string
+          id?: string
+          last_name: string
+          message?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          persons?: number
+          phone: string
+          spot_id: string
+          start_date: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          total_price?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          base_price?: number
+          created_at?: string
+          email?: string
+          end_date?: string
+          extras?: Json
+          extras_price?: number
+          first_name?: string
+          id?: string
+          last_name?: string
+          message?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          persons?: number
+          phone?: string
+          spot_id?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          total_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_spots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extras: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          id: string
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fishing_spots: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          features: string[]
+          id: string
+          image_url: string | null
+          max_persons: number
+          name: string
+          price_per_day: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          features?: string[]
+          id?: string
+          image_url?: string | null
+          max_persons?: number
+          name: string
+          price_per_day?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          features?: string[]
+          id?: string
+          image_url?: string | null
+          max_persons?: number
+          name?: string
+          price_per_day?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       password_reset_tokens: {
         Row: {
           code: string
@@ -134,6 +318,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      booking_status: "pending" | "approved" | "rejected" | "paid" | "cancelled"
+      payment_status: "unpaid" | "paid" | "refunded"
+      spot_availability: "available" | "partial" | "unavailable"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -262,6 +449,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      booking_status: ["pending", "approved", "rejected", "paid", "cancelled"],
+      payment_status: ["unpaid", "paid", "refunded"],
+      spot_availability: ["available", "partial", "unavailable"],
     },
   },
 } as const
