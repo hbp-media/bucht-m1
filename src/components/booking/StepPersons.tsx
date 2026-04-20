@@ -39,7 +39,7 @@ const StepPersons = ({
           <div>
             <h3 className="font-display text-lg text-foreground">Angler</h3>
             <p className="font-body text-[11px] text-muted-foreground">
-              Maximal {maxPersons} Personen insgesamt auf diesem Platz
+              Maximal {maxPersons} Angler auf diesem Platz · Gesamt max. {maxTotal} Personen
             </p>
           </div>
         </div>
