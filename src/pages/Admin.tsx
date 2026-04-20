@@ -16,10 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Shield, ShieldCheck, Search, Users, Calendar, MapPin, Package } from "lucide-react";
+import { Trash2, Shield, ShieldCheck, Search, Users, Calendar, MapPin, Package, CalendarDays } from "lucide-react";
 import AdminBookings from "@/components/admin/AdminBookings";
 import AdminSpots from "@/components/admin/AdminSpots";
 import AdminExtras from "@/components/admin/AdminExtras";
+import AdminCalendar from "@/components/admin/AdminCalendar";
 
 interface Profile {
   id: string;
@@ -30,7 +31,7 @@ interface Profile {
   created_at: string;
 }
 
-type Tab = "bookings" | "users" | "spots" | "extras";
+type Tab = "bookings" | "calendar" | "users" | "spots" | "extras";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -125,7 +126,7 @@ const Admin = () => {
     <main className="bg-background min-h-screen flex flex-col">
       <Navbar />
       <section className="flex-1 pt-32 pb-20 px-6 md:px-12">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="w-12 h-px bg-accent" />
@@ -142,12 +143,14 @@ const Admin = () => {
             {/* Tabs */}
             <div className="flex flex-wrap justify-center gap-1 mb-10 border-b border-border">
               <TabBtn active={tab === "bookings"} onClick={() => setTab("bookings")} icon={<Calendar className="w-4 h-4" />}>Buchungen</TabBtn>
+              <TabBtn active={tab === "calendar"} onClick={() => setTab("calendar")} icon={<CalendarDays className="w-4 h-4" />}>Kalender</TabBtn>
               <TabBtn active={tab === "users"} onClick={() => setTab("users")} icon={<Users className="w-4 h-4" />}>Benutzer</TabBtn>
               <TabBtn active={tab === "spots"} onClick={() => setTab("spots")} icon={<MapPin className="w-4 h-4" />}>Plätze</TabBtn>
               <TabBtn active={tab === "extras"} onClick={() => setTab("extras")} icon={<Package className="w-4 h-4" />}>Extras</TabBtn>
             </div>
 
             {tab === "bookings" && <AdminBookings />}
+            {tab === "calendar" && <AdminCalendar />}
             {tab === "spots" && <AdminSpots />}
             {tab === "extras" && <AdminExtras />}
 
