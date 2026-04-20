@@ -1,7 +1,9 @@
+// FishingSpot Karten + Typdefinition
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Users, MapPin } from "lucide-react";
+import { Check, Users, MapPin, Home, Caravan } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { AccommodationType } from "@/lib/pricing";
 
 export interface FishingSpot {
   id: string;
@@ -13,6 +15,7 @@ export interface FishingSpot {
   image_url: string | null;
   active: boolean;
   sort_order: number;
+  accommodation_type: AccommodationType;
 }
 
 interface StepSpotProps {
@@ -31,18 +34,35 @@ const StepSpot = ({ selectedSpotId, onSelect }: StepSpotProps) => {
         .select("*")
         .eq("active", true)
         .order("sort_order");
-      setSpots(data || []);
+      const mapped: FishingSpot[] = (data || []).map((s: any) => ({
+        ...s,
+        accommodation_type: (s.accommodation_type ?? "hut") as AccommodationType,
+      }));
+      setSpots(mapped);
       setLoading(false);
     };
     load();
   }, []);
 
-  if (loading) return <p className="text-center text-muted-foreground font-body py-12">Lade Plätze...</p>;
+  if (loading) {
+    return (
+      <p className="text-center text-muted-foreground font-body py-12">Lade Plätze...</p>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {spots.map((spot, i) => {
         const isSelected = selectedSpotId === spot.id;
+        const AccIcon =
+          spot.accommodation_type === "caravan" ? Caravan : spot.accommodation_type === "hut" ? Home : null;
+        const accLabel =
+          spot.accommodation_type === "caravan"
+            ? "Wohnwagen verfügbar"
+            : spot.accommodation_type === "hut"
+              ? "Fischerhütte verfügbar"
+              : null;
+
         return (
           <motion.button
             key={spot.id}
@@ -76,7 +96,7 @@ const StepSpot = ({ selectedSpotId, onSelect }: StepSpotProps) => {
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h3 className="font-display text-lg text-foreground">{spot.name}</h3>
                 <span className="font-body text-xs text-accent whitespace-nowrap">
-                  €{spot.price_per_day}/Tag
+                  ab €130
                 </span>
               </div>
 
@@ -97,9 +117,19 @@ const StepSpot = ({ selectedSpotId, onSelect }: StepSpotProps) => {
                 </div>
               )}
 
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Users className="w-3 h-3" />
-                <span className="font-body text-[11px]">max. {spot.max_persons} Personen</span>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Users className="w-3 h-3" />
+                  <span className="font-body text-[11px]">max. {spot.max_persons}</span>
+                </div>
+                {AccIcon && accLabel && (
+                  <div className="flex items-center gap-1.5 text-accent">
+                    <AccIcon className="w-3 h-3" strokeWidth={1.6} />
+                    <span className="font-body text-[10px] tracking-[0.1em] uppercase">
+                      {spot.accommodation_type === "caravan" ? "Wohnwagen" : "Hütte"}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </motion.button>

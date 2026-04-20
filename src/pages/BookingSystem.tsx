@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -12,14 +12,32 @@ import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StepIndicator from "@/components/booking/StepIndicator";
+import StepMode from "@/components/booking/StepMode";
 import StepSpot, { FishingSpot } from "@/components/booking/StepSpot";
 import StepDates from "@/components/booking/StepDates";
 import StepPersons from "@/components/booking/StepPersons";
-import StepExtras, { Extra } from "@/components/booking/StepExtras";
-import StepSummary from "@/components/booking/StepSummary";
-import StepRequest, { ContactData } from "@/components/booking/StepRequest";
+import StepAccommodation from "@/components/booking/StepAccommodation";
+import StepExtras from "@/components/booking/StepExtras";
+import StepReview, { ContactData } from "@/components/booking/StepReview";
 
-const STEPS = ["Platz", "Zeitraum", "Personen", "Extras", "Übersicht", "Anfrage"];
+import {
+  buildPricing,
+  type AccommodationType,
+  type BookingMode,
+  type Extra,
+  type ExtraUnit,
+} from "@/lib/pricing";
+import { buildWeekendRange, nextFriday } from "@/lib/weekend";
+
+const STEPS = [
+  "Modus",
+  "Platz",
+  "Zeitraum",
+  "Personen",
+  "Unterkunft",
+  "Extras",
+  "Übersicht",
+];
 
 const BookingSystem = () => {
   const { user, loading } = useAuth();
@@ -30,10 +48,16 @@ const BookingSystem = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [mode, setMode] = useState<BookingMode | null>(null);
   const [spot, setSpot] = useState<FishingSpot | null>(null);
   const [range, setRange] = useState<DateRange | undefined>();
   const [persons, setPersons] = useState(1);
+  const [companions, setCompanions] = useState(0);
+  const [accommodationType, setAccommodationType] = useState<AccommodationType>("none");
+  const [accommodationPersons, setAccommodationPersons] = useState(0);
+  const [allInclusive, setAllInclusive] = useState(false);
   const [extraIds, setExtraIds] = useState<string[]>([]);
+  const [extraQuantities, setExtraQuantities] = useState<Record<string, number>>({});
   const [allExtras, setAllExtras] = useState<Extra[]>([]);
   const [contact, setContact] = useState<ContactData>({
     first_name: "",
@@ -43,14 +67,13 @@ const BookingSystem = () => {
     message: "",
   });
 
-  // Auth + profile prefill + status check
+  // Auth + Profile prefill + Status check
   useEffect(() => {
     if (loading) return;
     if (!user) {
       navigate("/login");
       return;
     }
-
     const init = async () => {
       const { data: profile } = await supabase
         .from("profiles")
@@ -79,35 +102,87 @@ const BookingSystem = () => {
     init();
   }, [user, loading]);
 
-  // Fetch all extras once for summary
+  // Alle Extras vorladen
   useEffect(() => {
     supabase
       .from("extras")
       .select("*")
       .eq("active", true)
-      .then(({ data }) => setAllExtras(data || []));
+      .order("sort_order")
+      .then(({ data }) => {
+        const list: Extra[] = (data || []).map((e) => ({
+          id: e.id,
+          code: (e as any).code ?? null,
+          name: e.name,
+          description: e.description,
+          price: Number(e.price),
+          unit: ((e as any).unit ?? "flat") as ExtraUnit,
+          allow_quantity: Boolean((e as any).allow_quantity),
+          active: e.active,
+          sort_order: e.sort_order,
+        }));
+        setAllExtras(list);
+      });
   }, []);
 
-  const selectedExtras = allExtras.filter((e) => extraIds.includes(e.id));
-  const nights = range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
-  const basePrice = spot ? spot.price_per_day * nights : 0;
-  const extrasPrice = selectedExtras.reduce((s, e) => s + Number(e.price), 0);
-  const totalPrice = basePrice + extrasPrice;
+  // Wochenende-Modus → Range automatisch befüllen
+  useEffect(() => {
+    if (mode === "weekend") {
+      setRange(buildWeekendRange(nextFriday()));
+    } else if (mode === "custom") {
+      setRange(undefined);
+    }
+  }, [mode]);
 
+  const nights =
+    range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
+
+  const totalPersons = persons + companions;
+
+  const pricing = useMemo(
+    () =>
+      buildPricing({
+        nights,
+        accommodationType,
+        accommodationPersons,
+        totalPersons,
+        allInclusive,
+        extras: allExtras,
+        extraQuantities,
+        selectedExtraIds: extraIds,
+      }),
+    [
+      nights,
+      accommodationType,
+      accommodationPersons,
+      totalPersons,
+      allInclusive,
+      allExtras,
+      extraQuantities,
+      extraIds,
+    ],
+  );
+
+  // Validation pro Schritt
   const canNext = (() => {
     switch (step) {
       case 0:
-        return !!spot;
+        return !!mode;
       case 1:
-        return !!range?.from && !!range?.to && nights >= 1;
+        return !!spot;
       case 2:
-        return persons >= 1 && (spot ? persons <= spot.max_persons : true);
+        return !!range?.from && !!range?.to && nights >= 3;
       case 3:
-        return true;
+        return persons >= 1 && (spot ? persons <= spot.max_persons : true);
       case 4:
-        return true;
-      case 5:
         return (
+          accommodationType === "none" ||
+          (accommodationPersons >= 1 && accommodationPersons <= totalPersons)
+        );
+      case 5:
+        return true;
+      case 6:
+        return !!(
           contact.first_name.trim() &&
           contact.last_name.trim() &&
           contact.email.trim() &&
@@ -118,26 +193,46 @@ const BookingSystem = () => {
     }
   })();
 
+  // Verfügbare Unterkunft je Spot
+  const availableAccommodation: AccommodationType =
+    spot?.accommodation_type === "caravan"
+      ? "caravan"
+      : spot?.accommodation_type === "hut"
+        ? "hut"
+        : "none";
+
   const handleSpotSelect = (s: FishingSpot) => {
     setSpot(s);
     if (persons > s.max_persons) setPersons(s.max_persons);
-    setRange(undefined);
+    setAccommodationType("none");
+    setAccommodationPersons(0);
   };
 
   const handleSubmit = async () => {
-    if (!user || !spot || !range?.from || !range?.to) return;
+    if (!user || !spot || !range?.from || !range?.to || !mode) return;
     setSubmitting(true);
 
-    const payload = {
+    const payload: any = {
       user_id: user.id,
       spot_id: spot.id,
+      booking_mode: mode,
       start_date: range.from.toISOString().split("T")[0],
       end_date: range.to.toISOString().split("T")[0],
+      nights: pricing.nights,
+      extra_24h_blocks: pricing.extra24hBlocks,
       persons,
-      extras: selectedExtras.map((e) => ({ id: e.id, name: e.name, price: Number(e.price) })),
-      base_price: basePrice,
-      extras_price: extrasPrice,
-      total_price: totalPrice,
+      companions,
+      accommodation_type: accommodationType,
+      accommodation_persons: accommodationPersons,
+      all_inclusive: allInclusive,
+      license_price: pricing.licensePrice,
+      accommodation_price: pricing.accommodationPrice,
+      cleaning_price: pricing.cleaningPrice,
+      all_inclusive_price: pricing.allInclusivePrice,
+      base_price: pricing.licensePrice,
+      extras: pricing.extras,
+      extras_price: pricing.extrasPrice,
+      total_price: pricing.total,
       first_name: contact.first_name.trim(),
       last_name: contact.last_name.trim(),
       email: contact.email.trim(),
@@ -145,7 +240,11 @@ const BookingSystem = () => {
       message: contact.message.trim(),
     };
 
-    const { error } = await supabase.from("bookings").insert(payload);
+    const { data: inserted, error } = await supabase
+      .from("bookings")
+      .insert(payload)
+      .select("id")
+      .single();
 
     if (error) {
       toast({
@@ -157,21 +256,16 @@ const BookingSystem = () => {
       return;
     }
 
-    // Fire-and-forget confirmation email
+    // Admin-Mail (kein Kunden-Mail bei Anfrage!)
     try {
       await supabase.functions.invoke("send-booking-email", {
         body: {
-          type: "received",
-          email: contact.email.trim(),
-          first_name: contact.first_name.trim(),
-          spot_name: spot.name,
-          start_date: payload.start_date,
-          end_date: payload.end_date,
-          total_price: totalPrice,
+          type: "admin_new",
+          booking_id: inserted?.id,
         },
       });
     } catch (e) {
-      console.error("confirmation email failed", e);
+      console.error("admin notification failed", e);
     }
 
     setSubmitted(true);
@@ -180,7 +274,6 @@ const BookingSystem = () => {
 
   if (loading) return null;
 
-  // Success screen
   if (submitted) {
     return (
       <main className="bg-background min-h-screen flex flex-col">
@@ -210,8 +303,9 @@ const BookingSystem = () => {
               </h1>
 
               <p className="font-body text-sm text-muted-foreground leading-relaxed mb-10">
-                Deine Anfrage wurde erfolgreich übermittelt. Wir prüfen die Verfügbarkeit
-                und melden uns in Kürze bei dir per E-Mail oder Telefon.
+                Deine Anfrage wurde übermittelt. Wir prüfen die Verfügbarkeit und melden
+                uns mit der Bestätigung per E-Mail. Erst nach unserer Freigabe ist die
+                Buchung verbindlich.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -261,6 +355,20 @@ const BookingSystem = () => {
             <StepIndicator steps={STEPS} current={step} />
           </div>
 
+          {/* Live Total (sticky bei Mobile bevor Review) */}
+          {step > 0 && step < 6 && pricing.total > 0 && (
+            <div className="mb-8 flex justify-center">
+              <div className="inline-flex items-center gap-3 bg-card border border-border px-5 py-2.5">
+                <span className="font-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+                  Aktuelle Summe
+                </span>
+                <span className="font-display text-lg text-primary">
+                  €{pricing.total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Steps */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -271,25 +379,74 @@ const BookingSystem = () => {
               transition={{ duration: 0.3 }}
               className="min-h-[400px]"
             >
-              {step === 0 && (
-                <StepSpot selectedSpotId={spot?.id ?? null} onSelect={handleSpotSelect} />
+              {step === 0 && <StepMode mode={mode} onChange={setMode} />}
+
+              {step === 1 && (
+                <StepSpot
+                  selectedSpotId={spot?.id ?? null}
+                  onSelect={handleSpotSelect}
+                />
               )}
-              {step === 1 && spot && (
+
+              {step === 2 && spot && mode === "custom" && (
                 <StepDates spotId={spot.id} range={range} onChange={setRange} />
               )}
-              {step === 2 && spot && (
-                <StepPersons persons={persons} maxPersons={spot.max_persons} onChange={setPersons} />
+              {step === 2 && spot && mode === "weekend" && (
+                <StepDates spotId={spot.id} range={range} onChange={setRange} />
               )}
-              {step === 3 && <StepExtras selected={extraIds} onChange={setExtraIds} />}
-              {step === 4 && spot && range?.from && range?.to && (
-                <StepSummary
+
+              {step === 3 && spot && (
+                <StepPersons
+                  persons={persons}
+                  companions={companions}
+                  maxPersons={spot.max_persons}
+                  onChange={(p, c) => {
+                    setPersons(p);
+                    setCompanions(c);
+                  }}
+                />
+              )}
+
+              {step === 4 && spot && (
+                <StepAccommodation
+                  available={availableAccommodation}
+                  selected={accommodationType}
+                  accommodationPersons={accommodationPersons}
+                  totalPersons={totalPersons}
+                  onChange={(t, p) => {
+                    setAccommodationType(t);
+                    setAccommodationPersons(p);
+                  }}
+                />
+              )}
+
+              {step === 5 && (
+                <StepExtras
+                  selected={extraIds}
+                  quantities={extraQuantities}
+                  allInclusive={allInclusive}
+                  onChange={(s, q, ai) => {
+                    setExtraIds(s);
+                    setExtraQuantities(q);
+                    setAllInclusive(ai);
+                  }}
+                />
+              )}
+
+              {step === 6 && spot && range?.from && range?.to && (
+                <StepReview
                   spot={spot}
                   range={range}
                   persons={persons}
-                  extras={selectedExtras}
+                  companions={companions}
+                  accommodationType={accommodationType}
+                  accommodationPersons={accommodationPersons}
+                  allInclusive={allInclusive}
+                  pricing={pricing}
+                  contact={contact}
+                  onContactChange={setContact}
                 />
               )}
-              {step === 5 && <StepRequest data={contact} onChange={setContact} />}
             </motion.div>
           </AnimatePresence>
 
