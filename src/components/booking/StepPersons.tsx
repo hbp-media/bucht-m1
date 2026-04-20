@@ -91,7 +91,8 @@ const StepPersons = ({
           <button
             type="button"
             onClick={() => onChange(persons, companions + 1, companionsKids)}
-            className="w-11 h-11 border border-border flex items-center justify-center text-foreground hover:border-accent transition-colors"
+            disabled={atMax}
+            className="w-11 h-11 border border-border flex items-center justify-center text-foreground hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Mehr Begleitung"
           >
             <Plus className="w-4 h-4" />
