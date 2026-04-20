@@ -157,6 +157,23 @@ const BookingSystem = () => {
       return;
     }
 
+    // Fire-and-forget confirmation email
+    try {
+      await supabase.functions.invoke("send-booking-email", {
+        body: {
+          type: "received",
+          email: contact.email.trim(),
+          first_name: contact.first_name.trim(),
+          spot_name: spot.name,
+          start_date: payload.start_date,
+          end_date: payload.end_date,
+          total_price: totalPrice,
+        },
+      });
+    } catch (e) {
+      console.error("confirmation email failed", e);
+    }
+
     setSubmitted(true);
     setSubmitting(false);
   };
