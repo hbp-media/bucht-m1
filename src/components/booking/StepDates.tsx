@@ -54,9 +54,12 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
         const start = new Date(b.start_date);
         const end = new Date(b.end_date);
         const cur = new Date(start);
-        const target = b.status === "pending" ? pending : blocked;
+        // Pending UND approved/paid blockieren beide den Platz komplett.
+        // Pending wird zusätzlich visuell gelb markiert.
+        const isPending = b.status === "pending";
         while (cur <= end) {
-          target.push(new Date(cur));
+          blocked.push(new Date(cur));
+          if (isPending) pending.push(new Date(cur));
           cur.setDate(cur.getDate() + 1);
         }
       });
@@ -98,13 +101,28 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
       ]
     : [{ before: today }, ...blockedDates];
 
+  // Verhindert Range-Auswahl, die blockierte Tage einschließt
+  const rangeContainsBlocked = (from: Date, to: Date) => {
+    const cur = new Date(from);
+    while (cur <= to) {
+      if (blockedSet.has(format(cur, "yyyy-MM-dd"))) return true;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return false;
+  };
+
   const handleSelect = (r: DateRange | undefined) => {
     if (isWeekend) {
-      // Im Wochenend-Modus: bei Klick auf einen Freitag → fix Fr → So
       const picked = r?.from;
       if (picked && getDay(picked) === 5 && !isWeekendBlocked(picked)) {
         onChange({ from: picked, to: addDays(picked, 2) });
       }
+      return;
+    }
+    // Range darf keine blockierten Tage enthalten
+    if (r?.from && r?.to && rangeContainsBlocked(r.from, r.to)) {
+      // Nur Startdatum behalten, Auswahl resetten
+      onChange({ from: r.from, to: undefined });
       return;
     }
     onChange(r);
@@ -158,14 +176,14 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
           <DayPicker
             mode="range"
             selected={range}
-            onSelect={onChange}
+            onSelect={handleSelect}
             locale={de}
             numberOfMonths={2}
             disabled={disabledMatcher}
             modifiers={{ blocked: blockedDates, pending: pendingDates }}
             modifiersClassNames={{
               blocked: "bg-destructive/15 text-destructive line-through",
-              pending: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+              pending: "!bg-yellow-500/20 !text-yellow-700 dark:!text-yellow-400 line-through",
               selected: "!bg-primary !text-primary-foreground",
               range_start: "!bg-primary !text-primary-foreground",
               range_end: "!bg-primary !text-primary-foreground",
