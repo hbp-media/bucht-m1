@@ -66,6 +66,13 @@ export const calcAccommodation = (params: {
   return { stayPrice, cleaningPrice };
 };
 
+export const COMPANION_PRICE_PER_24H = 10;
+
+export const calcCompanionsPrice = (companions: number, nights: number): number => {
+  if (companions <= 0 || nights <= 0) return 0;
+  return companions * nights * COMPANION_PRICE_PER_24H;
+};
+
 export const calcAllInclusive = (params: {
   enabled: boolean;
   totalPersons: number;  // Angler + Begleitpersonen
@@ -103,6 +110,7 @@ export interface PricingBreakdown {
   accommodationPrice: number;
   cleaningPrice: number;
   allInclusivePrice: number;
+  companionsPrice: number;
   extras: SelectedExtra[];
   extrasPrice: number;
   total: number;
@@ -113,6 +121,7 @@ export const buildPricing = (input: {
   accommodationType: AccommodationType;
   accommodationPersons: number;
   totalPersons: number;
+  companions: number;        // zahlende Begleiter (>10 Jahre)
   allInclusive: boolean;
   extras: Extra[];
   extraQuantities: Record<string, number>;   // extraId -> quantity
@@ -132,6 +141,8 @@ export const buildPricing = (input: {
     totalPersons: input.totalPersons,
     nights: input.nights,
   });
+
+  const companionsPrice = calcCompanionsPrice(input.companions, input.nights);
 
   const selectedExtras: SelectedExtra[] = input.selectedExtraIds
     .map((id) => input.extras.find((e) => e.id === id))
@@ -163,6 +174,7 @@ export const buildPricing = (input: {
     accommodationPrice: acc.stayPrice,
     cleaningPrice: acc.cleaningPrice,
     allInclusivePrice,
+    companionsPrice,
     extras: selectedExtras,
     extrasPrice,
     total:
@@ -170,6 +182,7 @@ export const buildPricing = (input: {
       acc.stayPrice +
       acc.cleaningPrice +
       allInclusivePrice +
+      companionsPrice +
       extrasPrice,
   };
 };
