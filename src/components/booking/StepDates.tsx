@@ -1,0 +1,139 @@
+import { useEffect, useState } from "react";
+import { DayPicker, DateRange } from "react-day-picker";
+import { de } from "date-fns/locale";
+import { differenceInCalendarDays, format, isBefore, startOfDay } from "date-fns";
+import "react-day-picker/dist/style.css";
+import { supabase } from "@/integrations/supabase/client";
+
+interface StepDatesProps {
+  spotId: string;
+  range: DateRange | undefined;
+  onChange: (r: DateRange | undefined) => void;
+}
+
+const StepDates = ({ spotId, range, onChange }: StepDatesProps) => {
+  const [blockedDates, setBlockedDates] = useState<Date[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const today = new Date().toISOString().split("T")[0];
+
+      const [blockedRes, bookingsRes] = await Promise.all([
+        supabase
+          .from("blocked_dates")
+          .select("date")
+          .eq("spot_id", spotId)
+          .gte("date", today),
+        supabase
+          .from("bookings")
+          .select("start_date, end_date, status")
+          .eq("spot_id", spotId)
+          .in("status", ["approved", "paid"])
+          .gte("end_date", today),
+      ]);
+
+      const dates: Date[] = [];
+      blockedRes.data?.forEach((b: any) => dates.push(new Date(b.date)));
+
+      bookingsRes.data?.forEach((b: any) => {
+        const start = new Date(b.start_date);
+        const end = new Date(b.end_date);
+        const cur = new Date(start);
+        while (cur <= end) {
+          dates.push(new Date(cur));
+          cur.setDate(cur.getDate() + 1);
+        }
+      });
+
+      setBlockedDates(dates);
+      setLoading(false);
+    };
+    load();
+  }, [spotId]);
+
+  const today = startOfDay(new Date());
+  const nights = range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
+      <div className="bg-card border border-border p-4 md:p-6 rounded-md">
+        {loading ? (
+          <p className="text-center text-muted-foreground font-body py-8">Lade Verfügbarkeit...</p>
+        ) : (
+          <DayPicker
+            mode="range"
+            selected={range}
+            onSelect={onChange}
+            locale={de}
+            numberOfMonths={2}
+            disabled={[{ before: today }, ...blockedDates]}
+            modifiers={{ blocked: blockedDates }}
+            modifiersClassNames={{
+              blocked: "bg-destructive/15 text-destructive line-through",
+              selected: "!bg-primary !text-primary-foreground",
+              range_start: "!bg-primary !text-primary-foreground",
+              range_end: "!bg-primary !text-primary-foreground",
+              range_middle: "!bg-primary/20 !text-foreground",
+              today: "font-bold underline",
+            }}
+            className="pointer-events-auto"
+          />
+        )}
+
+        <div className="flex items-center gap-5 mt-4 pt-4 border-t border-border flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-sm bg-primary" />
+            <span className="font-body text-[11px] text-muted-foreground">Ausgewählt</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-sm bg-destructive/30" />
+            <span className="font-body text-[11px] text-muted-foreground">Belegt</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-sm bg-muted" />
+            <span className="font-body text-[11px] text-muted-foreground">Vergangen</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border p-6 lg:w-72">
+        <h4 className="font-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-4">
+          Dein Zeitraum
+        </h4>
+
+        <div className="space-y-4">
+          <div>
+            <div className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+              Anreise
+            </div>
+            <div className="font-display text-lg text-foreground">
+              {range?.from ? format(range.from, "dd. MMM yyyy", { locale: de }) : "–"}
+            </div>
+          </div>
+
+          <div>
+            <div className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+              Abreise
+            </div>
+            <div className="font-display text-lg text-foreground">
+              {range?.to ? format(range.to, "dd. MMM yyyy", { locale: de }) : "–"}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-border">
+            <div className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+              Dauer
+            </div>
+            <div className="font-display text-2xl text-primary">
+              {nights} {nights === 1 ? "Nacht" : "Nächte"}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StepDates;
