@@ -15,6 +15,7 @@ interface StepDatesProps {
 
 const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps) => {
   const [blockedDates, setBlockedDates] = useState<Date[]>([]);
+  const [pendingDates, setPendingDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(true);
 
   const isWeekend = mode === "weekend";
@@ -26,6 +27,7 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
 
       if (!spotId) {
         setBlockedDates([]);
+        setPendingDates([]);
         setLoading(false);
         return;
       }
@@ -40,24 +42,27 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
           .from("bookings")
           .select("start_date, end_date, status")
           .eq("spot_id", spotId)
-          .in("status", ["approved", "paid"])
+          .in("status", ["pending", "approved", "paid"])
           .gte("end_date", today),
       ]);
 
-      const dates: Date[] = [];
-      blockedRes.data?.forEach((b: any) => dates.push(new Date(b.date)));
+      const blocked: Date[] = [];
+      const pending: Date[] = [];
+      blockedRes.data?.forEach((b: any) => blocked.push(new Date(b.date)));
 
       bookingsRes.data?.forEach((b: any) => {
         const start = new Date(b.start_date);
         const end = new Date(b.end_date);
         const cur = new Date(start);
+        const target = b.status === "pending" ? pending : blocked;
         while (cur <= end) {
-          dates.push(new Date(cur));
+          target.push(new Date(cur));
           cur.setDate(cur.getDate() + 1);
         }
       });
 
-      setBlockedDates(dates);
+      setBlockedDates(blocked);
+      setPendingDates(pending);
       setLoading(false);
     };
     load();
@@ -66,7 +71,7 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
   const today = startOfDay(new Date());
   const nights = range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
 
-  // Set zum schnellen Lookup belegter Tage
+  // Sets zum schnellen Lookup
   const blockedSet = useMemo(() => {
     const s = new Set<string>();
     blockedDates.forEach((d) => s.add(format(d, "yyyy-MM-dd")));
