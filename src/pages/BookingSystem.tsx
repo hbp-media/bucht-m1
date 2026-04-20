@@ -53,6 +53,7 @@ const BookingSystem = () => {
   const [range, setRange] = useState<DateRange | undefined>();
   const [persons, setPersons] = useState(1);
   const [companions, setCompanions] = useState(0);
+  const [companionsKids, setCompanionsKids] = useState(0);
   const [accommodationType, setAccommodationType] = useState<AccommodationType>("none");
   const [accommodationPersons, setAccommodationPersons] = useState(0);
   const [allInclusive, setAllInclusive] = useState(false);
@@ -136,7 +137,7 @@ const BookingSystem = () => {
     range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
   const nights = mode === "weekend" && calendarNights > 0 ? 3 : calendarNights;
 
-  const totalPersons = persons + companions;
+  const totalPersons = persons + companions + companionsKids;
 
   const pricing = useMemo(
     () =>
@@ -145,6 +146,7 @@ const BookingSystem = () => {
         accommodationType,
         accommodationPersons,
         totalPersons,
+        companions,
         allInclusive,
         extras: allExtras,
         extraQuantities,
@@ -155,6 +157,7 @@ const BookingSystem = () => {
       accommodationType,
       accommodationPersons,
       totalPersons,
+      companions,
       allInclusive,
       allExtras,
       extraQuantities,
@@ -220,7 +223,7 @@ const BookingSystem = () => {
       nights: pricing.nights,
       extra_24h_blocks: pricing.extra24hBlocks,
       persons,
-      companions,
+      companions: companions + companionsKids,
       accommodation_type: accommodationType,
       accommodation_persons: accommodationPersons,
       all_inclusive: allInclusive,
@@ -395,10 +398,12 @@ const BookingSystem = () => {
                 <StepPersons
                   persons={persons}
                   companions={companions}
+                  companionsKids={companionsKids}
                   maxPersons={spot.max_persons}
-                  onChange={(p, c) => {
+                  onChange={(p, c, k) => {
                     setPersons(p);
                     setCompanions(c);
+                    setCompanionsKids(k);
                   }}
                 />
               )}
@@ -435,6 +440,7 @@ const BookingSystem = () => {
                   range={range}
                   persons={persons}
                   companions={companions}
+                  companionsKids={companionsKids}
                   accommodationType={accommodationType}
                   accommodationPersons={accommodationPersons}
                   allInclusive={allInclusive}
