@@ -95,10 +95,10 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
 
   const handleSelect = (r: DateRange | undefined) => {
     if (isWeekend) {
-      // Im Wochenend-Modus: bei Klick auf einen Freitag → fix Fr → So (3 Nächte)
+      // Im Wochenend-Modus: bei Klick auf einen Freitag → fix Fr → So
       const picked = r?.from;
       if (picked && getDay(picked) === 5 && !isWeekendBlocked(picked)) {
-        onChange({ from: picked, to: addDays(picked, 3) });
+        onChange({ from: picked, to: addDays(picked, 2) });
       }
       return;
     }
