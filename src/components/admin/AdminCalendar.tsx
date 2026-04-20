@@ -46,7 +46,6 @@ const STATUS_DOT: Record<string, string> = {
   approved: "bg-emerald-500",
   paid: "bg-primary",
   rejected: "bg-red-400",
-  cancelled: "bg-muted-foreground/40",
 };
 
 // Distinct color per spot index
@@ -215,7 +214,6 @@ const AdminCalendar = () => {
               { key: "approved", label: "Bestätigt" },
               { key: "paid", label: "Bezahlt" },
               { key: "rejected", label: "Abgelehnt" },
-              { key: "cancelled", label: "Storniert" },
             ].map((f) => {
               const active = statusFilter.has(f.key);
               return (

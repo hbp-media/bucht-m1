@@ -31,7 +31,6 @@ const STATUS_BADGE: Record<string, string> = {
   approved: "bg-emerald-100 text-emerald-800 border-emerald-200",
   rejected: "bg-red-100 text-red-800 border-red-200",
   paid: "bg-primary/10 text-primary border-primary/20",
-  cancelled: "bg-muted text-muted-foreground border-border",
 };
 
 const ACC_LABEL: Record<string, string> = {
@@ -45,7 +44,6 @@ const STATUS_LABEL: Record<string, string> = {
   approved: "Bestätigt",
   rejected: "Abgelehnt",
   paid: "Bezahlt",
-  cancelled: "Storniert",
 };
 
 const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
@@ -71,7 +69,7 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
     load();
   }, [bookingId]);
 
-  const updateStatus = async (status: "approved" | "rejected" | "paid" | "cancelled") => {
+  const updateStatus = async (status: "approved" | "rejected" | "paid") => {
     setActing(true);
     const { error } = await supabase.from("bookings").update({ status }).eq("id", bookingId);
     if (error) {
@@ -299,11 +297,11 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
         )}
         {(b.status === "approved" || b.status === "paid") && (
           <button
-            onClick={() => updateStatus("cancelled")}
+            onClick={() => updateStatus("rejected")}
             disabled={acting}
-            className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase border border-border text-muted-foreground hover:text-foreground hover:border-foreground disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 transition-colors"
           >
-            <X className="w-3.5 h-3.5" /> Stornieren
+            <X className="w-3.5 h-3.5" /> Ablehnen
           </button>
         )}
         <button
