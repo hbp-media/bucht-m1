@@ -126,7 +126,7 @@ const Admin = () => {
     <main className="bg-background min-h-screen flex flex-col">
       <Navbar />
       <section className="flex-1 pt-32 pb-20 px-6 md:px-12">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="w-12 h-px bg-accent" />
