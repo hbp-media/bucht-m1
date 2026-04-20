@@ -56,7 +56,7 @@ const StepPersons = ({
           <button
             type="button"
             onClick={() => onChange(Math.min(maxPersons, persons + 1), companions, companionsKids)}
-            disabled={persons >= maxPersons}
+            disabled={persons >= maxPersons || atMax}
             className="w-11 h-11 border border-border flex items-center justify-center text-foreground hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Mehr Angler"
           >
