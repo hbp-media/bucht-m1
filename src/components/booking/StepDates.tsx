@@ -121,11 +121,37 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
 
         {loading ? (
           <p className="text-center text-muted-foreground font-body py-8">Lade Verfügbarkeit...</p>
+        ) : isWeekend ? (
+          <DayPicker
+            mode="single"
+            selected={range?.from}
+            onDayClick={(day) => {
+              if (getDay(day) === 5 && !isWeekendBlocked(day)) {
+                onChange({ from: day, to: addDays(day, 2) });
+              }
+            }}
+            locale={de}
+            numberOfMonths={2}
+            disabled={disabledMatcher}
+            modifiers={{
+              blocked: blockedDates,
+              weekendRange: range?.from
+                ? [range.from, addDays(range.from, 1), addDays(range.from, 2)]
+                : [],
+            }}
+            modifiersClassNames={{
+              blocked: "bg-destructive/15 text-destructive line-through",
+              weekendRange: "!bg-primary !text-primary-foreground",
+              selected: "!bg-primary !text-primary-foreground",
+              today: "font-bold underline",
+            }}
+            className="pointer-events-auto"
+          />
         ) : (
           <DayPicker
             mode="range"
             selected={range}
-            onSelect={handleSelect}
+            onSelect={onChange}
             locale={de}
             numberOfMonths={2}
             disabled={disabledMatcher}
