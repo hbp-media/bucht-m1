@@ -20,6 +20,7 @@ interface StepReviewProps {
   range: DateRange;
   persons: number;
   companions: number;
+  companionsKids: number;
   accommodationType: AccommodationType;
   accommodationPersons: number;
   allInclusive: boolean;
@@ -33,6 +34,7 @@ const StepReview = ({
   range,
   persons,
   companions,
+  companionsKids,
   accommodationType,
   accommodationPersons,
   allInclusive,
@@ -107,6 +109,7 @@ const StepReview = ({
         range={range}
         persons={persons}
         companions={companions}
+        companionsKids={companionsKids}
         accommodationType={accommodationType}
         accommodationPersons={accommodationPersons}
         allInclusive={allInclusive}
@@ -121,6 +124,7 @@ interface PriceCardProps {
   range: DateRange;
   persons: number;
   companions: number;
+  companionsKids?: number;
   accommodationType: AccommodationType;
   accommodationPersons: number;
   allInclusive: boolean;
@@ -132,12 +136,13 @@ export const PriceCard = ({
   range,
   persons,
   companions,
+  companionsKids = 0,
   accommodationType,
   accommodationPersons,
   allInclusive,
   pricing,
 }: PriceCardProps) => {
-  const totalPersons = persons + companions;
+  const totalPersons = persons + companions + companionsKids;
   return (
     <div className="bg-card border border-border lg:sticky lg:top-32">
       <div className="p-6 border-b border-border bg-primary/5">
@@ -159,7 +164,12 @@ export const PriceCard = ({
           </>
         )}
         <Row label="Angler" value={String(persons)} />
-        {companions > 0 && <Row label="Begleitung" value={String(companions)} />}
+        {companions > 0 && (
+          <Row label="Begleitung (>10 J.)" value={String(companions)} />
+        )}
+        {companionsKids > 0 && (
+          <Row label="Kinder (bis 10 J.)" value={String(companionsKids)} />
+        )}
         {accommodationType !== "none" && (
           <Row
             label="Unterkunft"
@@ -187,6 +197,13 @@ export const PriceCard = ({
 
         {pricing.cleaningPrice > 0 && (
           <PriceRow label="Endreinigung" value={pricing.cleaningPrice} />
+        )}
+
+        {pricing.companionsPrice > 0 && (
+          <PriceRow
+            label={`Begleitung (${companions} P × ${pricing.nights} × 24h)`}
+            value={pricing.companionsPrice}
+          />
         )}
 
         {pricing.allInclusivePrice > 0 && (
