@@ -186,6 +186,10 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
             <span className="font-body text-[11px] text-muted-foreground">Belegt</span>
           </div>
           <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-sm bg-yellow-500/40" />
+            <span className="font-body text-[11px] text-muted-foreground">Vorreserviert</span>
+          </div>
+          <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-sm bg-muted" />
             <span className="font-body text-[11px] text-muted-foreground">
               {isWeekend ? "Nicht wählbar" : "Vergangen"}
