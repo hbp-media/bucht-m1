@@ -130,8 +130,11 @@ const BookingSystem = () => {
     setRange(undefined);
   }, [mode]);
 
-  const nights =
+  // Im Wochenend-Modus markiert der Kalender Fr → So (2 Kalendertage),
+  // das Paket entspricht aber 3×24h (Fr 11:00 → So 20:00 ≈ 72h-Karte).
+  const calendarNights =
     range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
+  const nights = mode === "weekend" && calendarNights > 0 ? 3 : calendarNights;
 
   const totalPersons = persons + companions;
 
