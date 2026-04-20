@@ -125,13 +125,9 @@ const BookingSystem = () => {
       });
   }, []);
 
-  // Wochenende-Modus → Range automatisch befüllen
+  // Modus-Wechsel → Auswahl zurücksetzen (nichts vorbelegen)
   useEffect(() => {
-    if (mode === "weekend") {
-      setRange(buildWeekendRange(nextFriday()));
-    } else if (mode === "custom") {
-      setRange(undefined);
-    }
+    setRange(undefined);
   }, [mode]);
 
   const nights =
