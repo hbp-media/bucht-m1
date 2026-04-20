@@ -28,7 +28,7 @@ const StepPersons = ({
           Belegung gesamt
         </span>
         <span className="font-display text-base text-primary">
-          {total} / {maxPersons}
+          {total} / {maxTotal}
         </span>
       </div>
 
