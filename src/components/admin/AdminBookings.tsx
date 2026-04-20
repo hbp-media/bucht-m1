@@ -41,7 +41,6 @@ const STATUS_BADGE: Record<string, string> = {
   approved: "bg-emerald-100 text-emerald-800 border-emerald-200",
   rejected: "bg-red-100 text-red-800 border-red-200",
   paid: "bg-primary/10 text-primary border-primary/20",
-  cancelled: "bg-muted text-muted-foreground border-border",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -49,7 +48,6 @@ const STATUS_LABEL: Record<string, string> = {
   approved: "Bestätigt",
   rejected: "Abgelehnt",
   paid: "Bezahlt",
-  cancelled: "Storniert",
 };
 
 const AdminBookings = () => {

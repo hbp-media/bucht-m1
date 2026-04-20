@@ -25,7 +25,6 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   approved: { label: "Bestätigt", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
   rejected: { label: "Abgelehnt", cls: "bg-red-100 text-red-800 border-red-200" },
   paid: { label: "Bezahlt", cls: "bg-primary/10 text-primary border-primary/20" },
-  cancelled: { label: "Storniert", cls: "bg-muted text-muted-foreground border-border" },
 };
 
 const MyBookings = () => {
@@ -51,15 +50,15 @@ const MyBookings = () => {
   }, [user]);
 
   const handleCancel = async (id: string) => {
-    if (!confirm("Diese Buchungsanfrage wirklich stornieren?")) return;
+    if (!confirm("Diese Buchungsanfrage wirklich ablehnen/stornieren?")) return;
     const { error } = await supabase
       .from("bookings")
-      .update({ status: "cancelled" })
+      .update({ status: "rejected" })
       .eq("id", id);
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Storniert", description: "Deine Anfrage wurde storniert." });
+      toast({ title: "Abgelehnt", description: "Deine Anfrage wurde entfernt." });
       load();
     }
   };
