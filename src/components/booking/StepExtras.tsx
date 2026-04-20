@@ -32,7 +32,9 @@ const StepExtras = ({
       .eq("active", true)
       .order("sort_order")
       .then(({ data }) => {
-        setExtras((data as Extra[]) || []);
+        // "Begleitperson" ist jetzt im Personen-Schritt enthalten und wird automatisch berechnet
+        const filtered = ((data as Extra[]) || []).filter((e) => e.code !== "companion");
+        setExtras(filtered);
         setLoading(false);
       });
   }, []);
