@@ -388,11 +388,8 @@ const BookingSystem = () => {
                 />
               )}
 
-              {step === 2 && spot && mode === "custom" && (
-                <StepDates spotId={spot.id} range={range} onChange={setRange} />
-              )}
-              {step === 2 && spot && mode === "weekend" && (
-                <StepDates spotId={spot.id} range={range} onChange={setRange} />
+              {step === 2 && spot && (
+                <StepDates spotId={spot.id} range={range} onChange={setRange} mode={mode} />
               )}
 
               {step === 3 && spot && (

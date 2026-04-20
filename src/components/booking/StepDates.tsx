@@ -1,19 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DayPicker, DateRange } from "react-day-picker";
 import { de } from "date-fns/locale";
-import { differenceInCalendarDays, format, isBefore, startOfDay } from "date-fns";
+import { addDays, differenceInCalendarDays, format, getDay, startOfDay } from "date-fns";
 import "react-day-picker/dist/style.css";
 import { supabase } from "@/integrations/supabase/client";
+import type { BookingMode } from "@/lib/pricing";
 
 interface StepDatesProps {
   spotId: string;
   range: DateRange | undefined;
   onChange: (r: DateRange | undefined) => void;
+  mode?: BookingMode | null;
 }
 
-const StepDates = ({ spotId, range, onChange }: StepDatesProps) => {
+const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps) => {
   const [blockedDates, setBlockedDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isWeekend = mode === "weekend";
 
   useEffect(() => {
     const load = async () => {
@@ -56,19 +60,69 @@ const StepDates = ({ spotId, range, onChange }: StepDatesProps) => {
   const today = startOfDay(new Date());
   const nights = range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
 
+  // Set zum schnellen Lookup belegter Tage
+  const blockedSet = useMemo(() => {
+    const s = new Set<string>();
+    blockedDates.forEach((d) => s.add(format(d, "yyyy-MM-dd")));
+    return s;
+  }, [blockedDates]);
+
+  // Prüft ob ein Fr–So Wochenende komplett frei ist
+  const isWeekendBlocked = (friday: Date) => {
+    for (let i = 0; i < 3; i++) {
+      const d = addDays(friday, i);
+      if (blockedSet.has(format(d, "yyyy-MM-dd"))) return true;
+    }
+    return false;
+  };
+
+  // Disabled-Logik je nach Modus
+  const disabledMatcher = isWeekend
+    ? [
+        { before: today },
+        // Alles außer Freitage deaktivieren
+        (date: Date) => getDay(date) !== 5,
+        // Freitage deaktivieren, wenn Fr/Sa/So belegt ist
+        (date: Date) => getDay(date) === 5 && isWeekendBlocked(date),
+      ]
+    : [{ before: today }, ...blockedDates];
+
+  const handleSelect = (r: DateRange | undefined) => {
+    if (isWeekend) {
+      // Im Wochenend-Modus: bei Klick auf einen Freitag → fix Fr → So (3 Nächte)
+      const picked = r?.from;
+      if (picked && getDay(picked) === 5 && !isWeekendBlocked(picked)) {
+        onChange({ from: picked, to: addDays(picked, 3) });
+      }
+      return;
+    }
+    onChange(r);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
       <div className="bg-card border border-border p-4 md:p-6 rounded-md">
+        {isWeekend && (
+          <div className="mb-4 p-3 border border-accent/40 bg-accent/5 rounded-sm">
+            <p className="font-body text-xs text-foreground leading-relaxed">
+              <span className="font-semibold">Wochenend-Karte:</span> Bitte wähle einen{" "}
+              <span className="text-primary font-semibold">Freitag</span> als Anreise. Der
+              Zeitraum wird automatisch auf <span className="font-semibold">Fr 11:00 – So 20:00</span>{" "}
+              (3 Nächte) festgelegt.
+            </p>
+          </div>
+        )}
+
         {loading ? (
           <p className="text-center text-muted-foreground font-body py-8">Lade Verfügbarkeit...</p>
         ) : (
           <DayPicker
             mode="range"
             selected={range}
-            onSelect={onChange}
+            onSelect={handleSelect}
             locale={de}
             numberOfMonths={2}
-            disabled={[{ before: today }, ...blockedDates]}
+            disabled={disabledMatcher}
             modifiers={{ blocked: blockedDates }}
             modifiersClassNames={{
               blocked: "bg-destructive/15 text-destructive line-through",
@@ -93,7 +147,9 @@ const StepDates = ({ spotId, range, onChange }: StepDatesProps) => {
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-sm bg-muted" />
-            <span className="font-body text-[11px] text-muted-foreground">Vergangen</span>
+            <span className="font-body text-[11px] text-muted-foreground">
+              {isWeekend ? "Nicht wählbar" : "Vergangen"}
+            </span>
           </div>
         </div>
       </div>
@@ -110,6 +166,9 @@ const StepDates = ({ spotId, range, onChange }: StepDatesProps) => {
             </div>
             <div className="font-display text-lg text-foreground">
               {range?.from ? format(range.from, "dd. MMM yyyy", { locale: de }) : "–"}
+              {isWeekend && range?.from && (
+                <span className="block font-body text-[11px] text-accent mt-0.5">11:00 Uhr</span>
+              )}
             </div>
           </div>
 
@@ -119,6 +178,9 @@ const StepDates = ({ spotId, range, onChange }: StepDatesProps) => {
             </div>
             <div className="font-display text-lg text-foreground">
               {range?.to ? format(range.to, "dd. MMM yyyy", { locale: de }) : "–"}
+              {isWeekend && range?.to && (
+                <span className="block font-body text-[11px] text-accent mt-0.5">20:00 Uhr</span>
+              )}
             </div>
           </div>
 
