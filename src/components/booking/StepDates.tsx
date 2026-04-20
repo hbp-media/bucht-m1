@@ -140,12 +140,14 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
             disabled={disabledMatcher}
             modifiers={{
               blocked: blockedDates,
+              pending: pendingDates,
               weekendRange: range?.from
                 ? [range.from, addDays(range.from, 1), addDays(range.from, 2)]
                 : [],
             }}
             modifiersClassNames={{
               blocked: "bg-destructive/15 text-destructive line-through",
+              pending: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
               weekendRange: "!bg-primary !text-primary-foreground",
               selected: "!bg-primary !text-primary-foreground",
               today: "font-bold underline",
@@ -160,9 +162,10 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
             locale={de}
             numberOfMonths={2}
             disabled={disabledMatcher}
-            modifiers={{ blocked: blockedDates }}
+            modifiers={{ blocked: blockedDates, pending: pendingDates }}
             modifiersClassNames={{
               blocked: "bg-destructive/15 text-destructive line-through",
+              pending: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
               selected: "!bg-primary !text-primary-foreground",
               range_start: "!bg-primary !text-primary-foreground",
               range_end: "!bg-primary !text-primary-foreground",
