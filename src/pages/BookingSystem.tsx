@@ -223,7 +223,7 @@ const BookingSystem = () => {
       nights: pricing.nights,
       extra_24h_blocks: pricing.extra24hBlocks,
       persons,
-      companions,
+      companions: companions + companionsKids,
       accommodation_type: accommodationType,
       accommodation_persons: accommodationPersons,
       all_inclusive: allInclusive,
