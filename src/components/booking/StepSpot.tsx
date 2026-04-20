@@ -120,7 +120,7 @@ const StepSpot = ({ selectedSpotId, onSelect }: StepSpotProps) => {
               <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Users className="w-3 h-3" />
-                  <span className="font-body text-[11px]">max. {spot.max_persons}</span>
+                  <span className="font-body text-[11px]">{spot.max_persons} Angler</span>
                 </div>
                 {AccIcon && accLabel && (
                   <div className="flex items-center gap-1.5 text-accent">
