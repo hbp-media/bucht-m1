@@ -30,9 +30,9 @@ import {
 import { buildWeekendRange, nextFriday } from "@/lib/weekend";
 
 const STEPS = [
+  "Platz",
   "Modus",
   "Zeitraum",
-  "Platz",
   "Personen",
   "Unterkunft",
   "Extras",
@@ -166,11 +166,11 @@ const BookingSystem = () => {
   const canNext = (() => {
     switch (step) {
       case 0:
-        return !!mode;
-      case 1:
-        return !!range?.from && !!range?.to && nights >= 3;
-      case 2:
         return !!spot;
+      case 1:
+        return !!mode;
+      case 2:
+        return !!range?.from && !!range?.to && nights >= 3;
       case 3:
         return persons >= 1 && (spot ? persons <= spot.max_persons : true);
       case 4:
@@ -378,17 +378,17 @@ const BookingSystem = () => {
               transition={{ duration: 0.3 }}
               className="min-h-[400px]"
             >
-              {step === 0 && <StepMode mode={mode} onChange={setMode} />}
-
-              {step === 1 && (
-                <StepDates spotId={spot?.id ?? null} range={range} onChange={setRange} mode={mode} />
-              )}
-
-              {step === 2 && (
+              {step === 0 && (
                 <StepSpot
                   selectedSpotId={spot?.id ?? null}
                   onSelect={handleSpotSelect}
                 />
+              )}
+
+              {step === 1 && <StepMode mode={mode} onChange={setMode} />}
+
+              {step === 2 && spot && (
+                <StepDates spotId={spot.id} range={range} onChange={setRange} mode={mode} />
               )}
 
               {step === 3 && spot && (
