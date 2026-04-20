@@ -4,7 +4,8 @@ interface StepPersonsProps {
   persons: number;
   companions: number;       // älter als 10 Jahre (kostenpflichtig €10/24h)
   companionsKids: number;   // bis 10 Jahre (kostenlos)
-  maxPersons: number;
+  maxPersons: number;       // max. Angler
+  maxTotal?: number;        // max. Gesamtbelegung (Angler + Begleiter + Kinder)
   onChange: (persons: number, companions: number, companionsKids: number) => void;
 }
 
@@ -13,10 +14,11 @@ const StepPersons = ({
   companions,
   companionsKids,
   maxPersons,
+  maxTotal = 4,
   onChange,
 }: StepPersonsProps) => {
   const total = persons + companions + companionsKids;
-  const atMax = total >= maxPersons;
+  const atMax = total >= maxTotal;
 
   return (
     <div className="max-w-xl mx-auto space-y-5">
@@ -26,7 +28,7 @@ const StepPersons = ({
           Belegung gesamt
         </span>
         <span className="font-display text-base text-primary">
-          {total} / {maxPersons}
+          {total} / {maxTotal}
         </span>
       </div>
 
@@ -37,7 +39,7 @@ const StepPersons = ({
           <div>
             <h3 className="font-display text-lg text-foreground">Angler</h3>
             <p className="font-body text-[11px] text-muted-foreground">
-              Maximal {maxPersons} Personen insgesamt auf diesem Platz
+              Maximal {maxPersons} Angler auf diesem Platz · Gesamt max. {maxTotal} Personen
             </p>
           </div>
         </div>

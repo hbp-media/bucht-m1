@@ -175,7 +175,7 @@ const BookingSystem = () => {
       case 2:
         return !!range?.from && !!range?.to && nights >= 3;
       case 3:
-        return persons >= 1 && (spot ? totalPersons <= spot.max_persons : true);
+        return persons >= 1 && (spot ? persons <= spot.max_persons : true) && totalPersons <= 4;
       case 4:
         return (
           accommodationType === "none" ||
