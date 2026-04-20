@@ -15,8 +15,21 @@ const StepPersons = ({
   maxPersons,
   onChange,
 }: StepPersonsProps) => {
+  const total = persons + companions + companionsKids;
+  const atMax = total >= maxPersons;
+
   return (
     <div className="max-w-xl mx-auto space-y-5">
+      {/* Hinweis Gesamtbelegung */}
+      <div className="bg-primary/5 border border-border px-5 py-3 flex items-center justify-between">
+        <span className="font-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+          Belegung gesamt
+        </span>
+        <span className="font-display text-base text-primary">
+          {total} / {maxPersons}
+        </span>
+      </div>
+
       {/* Angler */}
       <div className="bg-card border border-border p-7">
         <div className="flex items-center gap-3 mb-5">
@@ -24,7 +37,7 @@ const StepPersons = ({
           <div>
             <h3 className="font-display text-lg text-foreground">Angler</h3>
             <p className="font-body text-[11px] text-muted-foreground">
-              Maximal {maxPersons} Angler auf diesem Platz
+              Maximal {maxPersons} Personen insgesamt auf diesem Platz
             </p>
           </div>
         </div>
