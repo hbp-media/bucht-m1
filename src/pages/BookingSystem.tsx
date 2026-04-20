@@ -31,8 +31,8 @@ import { buildWeekendRange, nextFriday } from "@/lib/weekend";
 
 const STEPS = [
   "Modus",
-  "Platz",
   "Zeitraum",
+  "Platz",
   "Personen",
   "Unterkunft",
   "Extras",
@@ -169,9 +169,9 @@ const BookingSystem = () => {
       case 0:
         return !!mode;
       case 1:
-        return !!spot;
-      case 2:
         return !!range?.from && !!range?.to && nights >= 3;
+      case 2:
+        return !!spot;
       case 3:
         return persons >= 1 && (spot ? persons <= spot.max_persons : true);
       case 4:
@@ -382,14 +382,14 @@ const BookingSystem = () => {
               {step === 0 && <StepMode mode={mode} onChange={setMode} />}
 
               {step === 1 && (
+                <StepDates spotId={spot?.id ?? null} range={range} onChange={setRange} mode={mode} />
+              )}
+
+              {step === 2 && (
                 <StepSpot
                   selectedSpotId={spot?.id ?? null}
                   onSelect={handleSpotSelect}
                 />
-              )}
-
-              {step === 2 && spot && (
-                <StepDates spotId={spot.id} range={range} onChange={setRange} mode={mode} />
               )}
 
               {step === 3 && spot && (
