@@ -5,9 +5,9 @@ import lakeHero from "@/assets/lake-hero.jpg";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex flex-col md:flex-row overflow-hidden">
-      {/* Left: Image with diagonal edge */}
+      {/* Left: Image with diagonal edge (straight on mobile) */}
       <div className="relative w-full md:w-[55%] h-[50vh] md:h-screen flex-shrink-0">
-        <div className="absolute inset-0 split-diagonal md:split-diagonal">
+        <div className="absolute inset-0 md:split-diagonal">
           <img
             src={lakeHero}
             alt="Cinematic lake view at Bucht M1"
@@ -58,9 +58,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
           >
-            Bucht
-            <br />
-            <span className="italic text-primary">M1</span>
+            Bucht <span className="italic text-primary">M1</span>
           </motion.h1>
 
           {/* Subheadline */}

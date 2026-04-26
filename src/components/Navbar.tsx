@@ -124,7 +124,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       {mobileOpen && (
         <motion.div
-          className="md:hidden bg-background border-t border-border/30"
+          className="md:hidden bg-background border-t border-border/30 shadow-lg relative z-50"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           transition={{ duration: 0.3 }}
