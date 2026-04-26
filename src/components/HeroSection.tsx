@@ -58,9 +58,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
           >
-            Bucht
-            <br />
-            <span className="italic text-primary">M1</span>
+            Bucht <span className="italic text-primary">M1</span>
           </motion.h1>
 
           {/* Subheadline */}
