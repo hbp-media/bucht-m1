@@ -124,10 +124,10 @@ const Navbar = () => {
       {/* Mobile menu */}
       {mobileOpen && (
         <motion.div
-          className="md:hidden bg-background border-t border-border/30 shadow-lg relative z-50"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          transition={{ duration: 0.3 }}
+          className="md:hidden fixed inset-x-0 top-[68px] bottom-0 bg-background border-t border-border/30 shadow-lg z-50 overflow-y-auto"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
         >
           <nav className="flex flex-col gap-1 px-6 py-4">
             {navLinks.map((link) =>
