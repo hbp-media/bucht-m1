@@ -124,7 +124,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       {mobileOpen && (
         <motion.div
-          className="md:hidden fixed inset-x-0 top-[68px] bottom-0 bg-background border-t border-border/30 shadow-lg z-50 overflow-y-auto"
+          className="md:hidden absolute left-0 right-0 top-full bg-background border-t border-border/30 shadow-lg max-h-[calc(100vh-68px)] overflow-y-auto"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
