@@ -113,16 +113,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    // E-Mails feuern (best effort, blockiert Anfrage nicht)
+    // Bestätigungs-Mail nur an Kunden (kein Admin-Mail mehr)
     try {
       const url = `${supabaseUrl}/functions/v1/send-booking-email`;
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` };
-      await Promise.all([
-        fetch(url, { method: 'POST', headers, body: JSON.stringify({ type: 'admin_new', booking_id: inserted.id }) }),
-        fetch(url, { method: 'POST', headers, body: JSON.stringify({ type: 'request_received', booking_id: inserted.id }) }),
-      ]);
+      await fetch(url, { method: 'POST', headers, body: JSON.stringify({ type: 'request_received', booking_id: inserted.id }) });
     } catch (e) {
       console.error('email dispatch failed', e);
+    }
+
+    // In-App-Notification für alle Admins anlegen
+    try {
+      const { data: admins } = await admin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+      if (admins && admins.length > 0) {
+        const rows = admins.map((a: { user_id: string }) => ({
+          user_id: a.user_id,
+          type: 'admin_new_booking',
+          title: 'Neue Buchungsanfrage',
+          message: `${booking.first_name} ${booking.last_name} – ${booking.start_date} bis ${booking.end_date}`,
+          link: '/admin',
+          booking_id: inserted.id,
+        }));
+        await admin.from('notifications').insert(rows);
+      }
+    } catch (e) {
+      console.error('admin notification insert failed', e);
     }
 
     return new Response(

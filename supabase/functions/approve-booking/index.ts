@@ -90,6 +90,27 @@ Deno.serve(async (req) => {
       console.error('mail dispatch failed', e);
     }
 
+    // In-App-Notification für den Kunden
+    try {
+      const { data: bk } = await admin
+        .from('bookings')
+        .select('user_id, start_date, end_date')
+        .eq('id', bookingId)
+        .maybeSingle();
+      if (bk?.user_id) {
+        await admin.from('notifications').insert({
+          user_id: bk.user_id,
+          type: 'booking_approved',
+          title: 'Buchung freigegeben – jetzt bezahlen',
+          message: `Deine Buchung (${bk.start_date} – ${bk.end_date}) wurde freigegeben. Bitte innerhalb von 60 Minuten bezahlen.`,
+          link: `/account?pay=${bookingId}`,
+          booking_id: bookingId,
+        });
+      }
+    } catch (e) {
+      console.error('customer notification insert failed', e);
+    }
+
     return new Response(JSON.stringify({ success: true, payment_deadline: deadline }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
