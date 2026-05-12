@@ -68,7 +68,6 @@ const AdminExtras = () => {
       .update({
         name: draft.name,
         description: draft.description,
-        price: Number(draft.price),
         active: draft.active,
       })
       .eq("id", editingId);
@@ -99,8 +98,20 @@ const AdminExtras = () => {
       <Textarea value={draft.description || ""} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="Beschreibung" rows={2} />
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="font-body text-[10px] tracking-[0.15em] uppercase text-muted-foreground">Preis €</label>
-          <Input type="number" value={draft.price || 0} onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} />
+          <label className="font-body text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
+            Preis € {!creating && <span className="text-accent normal-case tracking-normal">· gesperrt</span>}
+          </label>
+          <Input
+            type="number"
+            value={draft.price ?? 0}
+            onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })}
+            disabled={!creating}
+          />
+          {!creating && (
+            <p className="font-body text-[10px] text-muted-foreground mt-1">
+              Preis nach Erstellung gesperrt. Zum Ändern: altes deaktivieren, neues anlegen.
+            </p>
+          )}
         </div>
         <div className="flex items-end">
           <label className="flex items-center gap-2 font-body text-xs">
