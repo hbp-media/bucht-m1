@@ -304,7 +304,7 @@ const BookingSystem = () => {
               <div className="flex items-center justify-center gap-4 mb-6">
                 <div className="w-12 h-px bg-accent" />
                 <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-                  Anfrage gesendet
+                  Buchung bestätigt
                 </span>
                 <div className="w-12 h-px bg-accent" />
               </div>
@@ -314,9 +314,8 @@ const BookingSystem = () => {
               </h1>
 
               <p className="font-body text-sm text-muted-foreground leading-relaxed mb-10">
-                Deine Anfrage wurde übermittelt. Wir prüfen die Verfügbarkeit und melden
-                uns mit der Bestätigung per E-Mail. Erst nach unserer Freigabe ist die
-                Buchung verbindlich.
+                Deine Zahlung wurde empfangen und die Buchung ist bestätigt. Du
+                erhältst gleich eine E-Mail mit allen Details.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -343,6 +342,7 @@ const BookingSystem = () => {
 
   return (
     <main className="bg-background min-h-screen flex flex-col">
+      <PaymentTestModeBanner />
       <Navbar />
 
       <section className="flex-1 pt-32 pb-20 px-6 md:px-12">
