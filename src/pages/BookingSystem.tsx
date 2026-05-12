@@ -28,6 +28,8 @@ import {
   type ExtraUnit,
 } from "@/lib/pricing";
 import { buildWeekendRange, nextFriday } from "@/lib/weekend";
+import { initializePaddle, getPaddleEnvironment } from "@/lib/paddle";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const STEPS = [
   "Platz",
@@ -214,8 +216,7 @@ const BookingSystem = () => {
     if (!user || !spot || !range?.from || !range?.to || !mode) return;
     setSubmitting(true);
 
-    const payload: any = {
-      user_id: user.id,
+    const bookingPayload = {
       spot_id: spot.id,
       booking_mode: mode,
       start_date: range.from.toISOString().split("T")[0],
@@ -242,36 +243,44 @@ const BookingSystem = () => {
       message: contact.message.trim(),
     };
 
-    const { data: inserted, error } = await supabase
-      .from("bookings")
-      .insert(payload)
-      .select("id")
-      .single();
+    try {
+      // 1) Create pending booking + Paddle transaction
+      const { data, error } = await supabase.functions.invoke("create-booking-checkout", {
+        body: { environment: getPaddleEnvironment(), booking: bookingPayload },
+      });
+      if (error || !data?.transactionId) {
+        throw new Error(error?.message || "Checkout konnte nicht erstellt werden");
+      }
 
-    if (error) {
+      // 2) Open Paddle overlay checkout
+      await initializePaddle();
+      window.Paddle.Checkout.open({
+        transactionId: data.transactionId,
+        customer: { email: bookingPayload.email },
+        settings: {
+          displayMode: "overlay",
+          theme: "light",
+          locale: "de",
+          successUrl: `${window.location.origin}/account?checkout=success`,
+          allowLogout: false,
+        },
+        eventCallback: (ev: any) => {
+          if (ev?.name === "checkout.completed") {
+            setSubmitted(true);
+          }
+          if (ev?.name === "checkout.closed" && !submitted) {
+            setSubmitting(false);
+          }
+        },
+      });
+    } catch (e: any) {
       toast({
-        title: "Fehler beim Senden",
-        description: error.message,
+        title: "Fehler beim Bezahlen",
+        description: e?.message ?? "Bitte erneut versuchen.",
         variant: "destructive",
       });
       setSubmitting(false);
-      return;
     }
-
-    // Admin-Mail (kein Kunden-Mail bei Anfrage!)
-    try {
-      await supabase.functions.invoke("send-booking-email", {
-        body: {
-          type: "admin_new",
-          booking_id: inserted?.id,
-        },
-      });
-    } catch (e) {
-      console.error("admin notification failed", e);
-    }
-
-    setSubmitted(true);
-    setSubmitting(false);
   };
 
   if (loading) return null;
@@ -295,7 +304,7 @@ const BookingSystem = () => {
               <div className="flex items-center justify-center gap-4 mb-6">
                 <div className="w-12 h-px bg-accent" />
                 <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-                  Anfrage gesendet
+                  Buchung bestätigt
                 </span>
                 <div className="w-12 h-px bg-accent" />
               </div>
@@ -305,9 +314,8 @@ const BookingSystem = () => {
               </h1>
 
               <p className="font-body text-sm text-muted-foreground leading-relaxed mb-10">
-                Deine Anfrage wurde übermittelt. Wir prüfen die Verfügbarkeit und melden
-                uns mit der Bestätigung per E-Mail. Erst nach unserer Freigabe ist die
-                Buchung verbindlich.
+                Deine Zahlung wurde empfangen und die Buchung ist bestätigt. Du
+                erhältst gleich eine E-Mail mit allen Details.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -334,6 +342,7 @@ const BookingSystem = () => {
 
   return (
     <main className="bg-background min-h-screen flex flex-col">
+      <PaymentTestModeBanner />
       <Navbar />
 
       <section className="flex-1 pt-32 pb-20 px-6 md:px-12">
@@ -479,7 +488,7 @@ const BookingSystem = () => {
                 disabled={!canNext || submitting}
                 className="flex items-center gap-2 px-8 py-3 font-body text-xs tracking-[0.2em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                {submitting ? "Wird gesendet..." : "Anfrage senden"}
+                {submitting ? "Wird vorbereitet..." : `Jetzt zahlen · €${pricing.total.toFixed(2)}`}
                 {!submitting && <Check className="w-3.5 h-3.5" />}
               </button>
             )}
