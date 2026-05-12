@@ -244,38 +244,16 @@ const BookingSystem = () => {
     };
 
     try {
-      // 1) Create pending booking + Paddle transaction
       const { data, error } = await supabase.functions.invoke("create-booking-checkout", {
-        body: { environment: getPaddleEnvironment(), booking: bookingPayload },
+        body: { booking: bookingPayload },
       });
-      if (error || !data?.transactionId) {
-        throw new Error(error?.message || "Checkout konnte nicht erstellt werden");
+      if (error || !data?.bookingId) {
+        throw new Error(error?.message || "Anfrage konnte nicht gesendet werden");
       }
-
-      // 2) Open Paddle overlay checkout
-      await initializePaddle();
-      window.Paddle.Checkout.open({
-        transactionId: data.transactionId,
-        customer: { email: bookingPayload.email },
-        settings: {
-          displayMode: "overlay",
-          theme: "light",
-          locale: "de",
-          successUrl: `${window.location.origin}/account?checkout=success`,
-          allowLogout: false,
-        },
-        eventCallback: (ev: any) => {
-          if (ev?.name === "checkout.completed") {
-            setSubmitted(true);
-          }
-          if (ev?.name === "checkout.closed" && !submitted) {
-            setSubmitting(false);
-          }
-        },
-      });
+      setSubmitted(true);
     } catch (e: any) {
       toast({
-        title: "Fehler beim Bezahlen",
+        title: "Fehler beim Senden",
         description: e?.message ?? "Bitte erneut versuchen.",
         variant: "destructive",
       });
