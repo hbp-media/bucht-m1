@@ -19,6 +19,9 @@ import Teichordnung from "./pages/Teichordnung.tsx";
 import Anfahrt from "./pages/Anfahrt.tsx";
 import Impressum from "./pages/Impressum.tsx";
 import Kontakt from "./pages/Kontakt.tsx";
+import AGB from "./pages/AGB.tsx";
+import Widerruf from "./pages/Widerruf.tsx";
+import Datenschutz from "./pages/Datenschutz.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -46,6 +49,9 @@ const App = () => (
             <Route path="/anfahrt" element={<Anfahrt />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/kontakt" element={<Kontakt />} />
+            <Route path="/agb" element={<AGB />} />
+            <Route path="/widerruf" element={<Widerruf />} />
+            <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
