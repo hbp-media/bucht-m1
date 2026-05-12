@@ -249,6 +249,9 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
         </div>
         <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground pt-1">
           Zahlung: <span className="text-foreground">{b.payment_status}</span>
+          {b.payment_deadline && b.status === "approved" && b.payment_status === "unpaid" && (
+            <> · Frist bis <span className="text-foreground">{format(new Date(b.payment_deadline), "dd.MM.yyyy HH:mm", { locale: de })}</span></>
+          )}
         </p>
       </div>
 
