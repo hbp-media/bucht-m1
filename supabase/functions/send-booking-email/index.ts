@@ -313,6 +313,7 @@ const refundedEmail = (b: BookingDetails) => {
       </div>`,
     text: `Hallo ${b.first_name}, deine Buchung für ${b.spot_name} (${dateRange}) wurde erstattet.`,
   };
+};
 
 const sendMail = async (apiKey: string, to: string[], subject: string, html: string, text: string) => {
   const res = await fetch("https://api.smtp2go.com/v3/email/send", {
