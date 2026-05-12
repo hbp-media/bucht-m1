@@ -410,6 +410,47 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (body.type === "request_received") {
+      const mail = requestReceivedEmail(booking);
+      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.type === "approved_pay_now") {
+      const siteOrigin = Deno.env.get("SITE_URL") || "https://buchtm1.purtuc.at";
+      const mail = approvedPayNowEmail(booking, siteOrigin);
+      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.type === "paid") {
+      const mail = paidEmail(booking);
+      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.type === "expired" || body.type === "payment_expired") {
+      const mail = expiredEmail(booking);
+      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.type === "refunded") {
+      const mail = refundedEmail(booking);
+      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown type" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
