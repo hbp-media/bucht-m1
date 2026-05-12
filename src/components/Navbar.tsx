@@ -4,6 +4,7 @@ import { Menu, X, User, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
+import NotificationBell from "@/components/NotificationBell";
 
 const navLinks = [
   { label: "Startseite", href: "/" },
@@ -94,6 +95,8 @@ const Navbar = () => {
               <Shield size={18} strokeWidth={1.5} />
             </Link>
           )}
+
+          {user && <NotificationBell />}
 
           <Link
             to={user ? "/account" : "/login"}
