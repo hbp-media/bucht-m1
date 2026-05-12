@@ -282,7 +282,7 @@ const BookingSystem = () => {
               <div className="flex items-center justify-center gap-4 mb-6">
                 <div className="w-12 h-px bg-accent" />
                 <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-                  Buchung bestätigt
+                  Anfrage gesendet
                 </span>
                 <div className="w-12 h-px bg-accent" />
               </div>
@@ -292,8 +292,9 @@ const BookingSystem = () => {
               </h1>
 
               <p className="font-body text-sm text-muted-foreground leading-relaxed mb-10">
-                Deine Zahlung wurde empfangen und die Buchung ist bestätigt. Du
-                erhältst gleich eine E-Mail mit allen Details.
+                Wir prüfen deine Anfrage und senden dir innerhalb von 24h einen
+                Zahlungslink per E-Mail. Erst nach Zahlungseingang ist deine Reservierung
+                verbindlich gesichert.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
