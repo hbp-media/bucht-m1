@@ -227,7 +227,93 @@ const rejectedEmail = (b: BookingDetails) => {
   };
 };
 
-const sendMail = async (apiKey: string, to: string[], subject: string, html: string, text: string) => {
+const requestReceivedEmail = (b: BookingDetails) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  return {
+    subject: "Wir haben deine Buchungsanfrage erhalten",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Anfrage eingegangen</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">vielen Dank für deine Buchungsanfrage für <strong>${b.spot_name}</strong> im Zeitraum <strong>${dateRange}</strong>.</p>
+        <p style="font-size:14px;line-height:1.6;">Wir prüfen deine Anfrage und melden uns in Kürze per E-Mail mit einem Zahlungslink. Erst nach Zahlungseingang ist deine Reservierung verbindlich gesichert.</p>
+        <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Vorläufige Preisaufstellung</h3>
+        ${renderPriceTable(b)}
+        <p style="font-size:13px;color:#666;margin-top:30px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, wir haben deine Anfrage für ${b.spot_name} (${dateRange}) erhalten und melden uns in Kürze mit einem Zahlungslink.`,
+  };
+};
+
+const approvedPayNowEmail = (b: BookingDetails, siteOrigin: string) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  const payUrl = `${siteOrigin}/account?pay=${b.id}`;
+  return {
+    subject: "Deine Buchung wurde freigegeben – jetzt bezahlen",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Buchung freigegeben ✓</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">deine Anfrage für <strong>${b.spot_name}</strong> (${dateRange}) wurde geprüft und freigegeben. Bitte schließe die Buchung innerhalb der nächsten <strong>60 Minuten</strong> mit der Zahlung ab – andernfalls wird der Platz wieder freigegeben.</p>
+        <h3 style="font-size:14px;color:#4a5a3a;margin:20px 0 10px;">Preisaufstellung</h3>
+        ${renderPriceTable(b)}
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${payUrl}" style="display:inline-block;background:#4a5a3a;color:#fff;text-decoration:none;padding:14px 32px;font-size:14px;letter-spacing:0.05em;">Jetzt sicher bezahlen</a>
+        </div>
+        <p style="font-size:12px;color:#666;line-height:1.5;">Falls der Button nicht funktioniert, öffne diesen Link: <a href="${payUrl}">${payUrl}</a></p>
+        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, deine Buchung für ${b.spot_name} (${dateRange}) wurde freigegeben. Bitte zahle innerhalb von 60 Minuten: ${payUrl}`,
+  };
+};
+
+const paidEmail = (b: BookingDetails) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  return {
+    subject: "Zahlungseingang bestätigt – Buchung gesichert",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Zahlung erhalten ✓</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">vielen Dank! Wir haben deine Zahlung für <strong>${b.spot_name}</strong> (${dateRange}) erhalten. Deine Buchung ist verbindlich gesichert.</p>
+        <h3 style="font-size:14px;color:#4a5a3a;margin:20px 0 10px;">Preisaufstellung</h3>
+        ${renderPriceTable(b)}
+        <p style="font-size:13px;color:#666;margin-top:24px;">Wir freuen uns auf dich!<br/>Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, wir haben deine Zahlung für ${b.spot_name} (${dateRange}) erhalten. Deine Buchung ist gesichert.`,
+  };
+};
+
+const expiredEmail = (b: BookingDetails) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  return {
+    subject: "Zahlungsfrist abgelaufen",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 20px;">Zahlungsfrist abgelaufen</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">deine freigegebene Buchung für <strong>${b.spot_name}</strong> (${dateRange}) wurde nicht innerhalb der Zahlungsfrist beglichen und ist verfallen. Der Platz wurde wieder freigegeben.</p>
+        <p style="font-size:14px;line-height:1.6;">Du kannst jederzeit eine neue Anfrage stellen.</p>
+        <p style="font-size:13px;color:#666;margin-top:30px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, die Zahlungsfrist für ${b.spot_name} (${dateRange}) ist abgelaufen. Der Platz ist wieder verfügbar.`,
+  };
+};
+
+const refundedEmail = (b: BookingDetails) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  return {
+    subject: "Erstattung bearbeitet",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 20px;">Erstattung bearbeitet</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">deine Buchung für <strong>${b.spot_name}</strong> (${dateRange}) wurde storniert und der Betrag erstattet. Die Gutschrift erfolgt über deinen ursprünglichen Zahlungsweg.</p>
+        <p style="font-size:13px;color:#666;margin-top:30px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, deine Buchung für ${b.spot_name} (${dateRange}) wurde erstattet.`,
+  };
+};
   const res = await fetch("https://api.smtp2go.com/v3/email/send", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
