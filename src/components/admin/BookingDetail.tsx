@@ -40,8 +40,8 @@ const ACC_LABEL: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: "Vorreserviert",
-  approved: "Bestätigt",
+  pending: "Anfrage",
+  approved: "Freigegeben (Zahlung offen)",
   rejected: "Abgelehnt",
   paid: "Bezahlt",
 };
