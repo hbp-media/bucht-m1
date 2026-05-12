@@ -70,6 +70,7 @@ export type Database = {
           license_price: number
           message: string | null
           nights: number
+          paddle_transaction_id: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           persons: number
           phone: string
@@ -103,6 +104,7 @@ export type Database = {
           license_price?: number
           message?: string | null
           nights?: number
+          paddle_transaction_id?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           persons?: number
           phone: string
@@ -136,6 +138,7 @@ export type Database = {
           license_price?: number
           message?: string | null
           nights?: number
+          paddle_transaction_id?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           persons?: number
           phone?: string
