@@ -28,7 +28,6 @@ import {
   type ExtraUnit,
 } from "@/lib/pricing";
 import { buildWeekendRange, nextFriday } from "@/lib/weekend";
-import { initializePaddle, getPaddleEnvironment } from "@/lib/paddle";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const STEPS = [
@@ -244,38 +243,16 @@ const BookingSystem = () => {
     };
 
     try {
-      // 1) Create pending booking + Paddle transaction
       const { data, error } = await supabase.functions.invoke("create-booking-checkout", {
-        body: { environment: getPaddleEnvironment(), booking: bookingPayload },
+        body: { booking: bookingPayload },
       });
-      if (error || !data?.transactionId) {
-        throw new Error(error?.message || "Checkout konnte nicht erstellt werden");
+      if (error || !data?.bookingId) {
+        throw new Error(error?.message || "Anfrage konnte nicht gesendet werden");
       }
-
-      // 2) Open Paddle overlay checkout
-      await initializePaddle();
-      window.Paddle.Checkout.open({
-        transactionId: data.transactionId,
-        customer: { email: bookingPayload.email },
-        settings: {
-          displayMode: "overlay",
-          theme: "light",
-          locale: "de",
-          successUrl: `${window.location.origin}/account?checkout=success`,
-          allowLogout: false,
-        },
-        eventCallback: (ev: any) => {
-          if (ev?.name === "checkout.completed") {
-            setSubmitted(true);
-          }
-          if (ev?.name === "checkout.closed" && !submitted) {
-            setSubmitting(false);
-          }
-        },
-      });
+      setSubmitted(true);
     } catch (e: any) {
       toast({
-        title: "Fehler beim Bezahlen",
+        title: "Fehler beim Senden",
         description: e?.message ?? "Bitte erneut versuchen.",
         variant: "destructive",
       });
@@ -304,7 +281,7 @@ const BookingSystem = () => {
               <div className="flex items-center justify-center gap-4 mb-6">
                 <div className="w-12 h-px bg-accent" />
                 <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-                  Buchung bestätigt
+                  Anfrage gesendet
                 </span>
                 <div className="w-12 h-px bg-accent" />
               </div>
@@ -314,8 +291,9 @@ const BookingSystem = () => {
               </h1>
 
               <p className="font-body text-sm text-muted-foreground leading-relaxed mb-10">
-                Deine Zahlung wurde empfangen und die Buchung ist bestätigt. Du
-                erhältst gleich eine E-Mail mit allen Details.
+                Wir prüfen deine Anfrage und senden dir innerhalb von 24h einen
+                Zahlungslink per E-Mail. Erst nach Zahlungseingang ist deine Reservierung
+                verbindlich gesichert.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -488,7 +466,7 @@ const BookingSystem = () => {
                 disabled={!canNext || submitting}
                 className="flex items-center gap-2 px-8 py-3 font-body text-xs tracking-[0.2em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                {submitting ? "Wird vorbereitet..." : `Jetzt zahlen · €${pricing.total.toFixed(2)}`}
+                {submitting ? "Wird gesendet..." : `Anfrage senden · €${pricing.total.toFixed(2)}`}
                 {!submitting && <Check className="w-3.5 h-3.5" />}
               </button>
             )}

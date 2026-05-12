@@ -40,8 +40,8 @@ const ACC_LABEL: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: "Vorreserviert",
-  approved: "Bestätigt",
+  pending: "Anfrage",
+  approved: "Freigegeben (Zahlung offen)",
   rejected: "Abgelehnt",
   paid: "Bezahlt",
 };
@@ -69,7 +69,26 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
     load();
   }, [bookingId]);
 
-  const updateStatus = async (status: "approved" | "rejected" | "paid") => {
+  const approveAndSendPayment = async () => {
+    setActing(true);
+    const { data, error } = await supabase.functions.invoke("approve-booking", {
+      body: { bookingId, deadlineMinutes: 60 },
+    });
+    if (error) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      setActing(false);
+      return;
+    }
+    toast({
+      title: "Freigegeben",
+      description: "Zahlungslink wurde an den Kunden gesendet (60 Min Frist).",
+    });
+    setActing(false);
+    onChanged?.();
+    load();
+  };
+
+  const updateStatus = async (status: "rejected" | "paid") => {
     setActing(true);
     const { error } = await supabase.from("bookings").update({ status }).eq("id", bookingId);
     if (error) {
@@ -77,10 +96,10 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
       setActing(false);
       return;
     }
-    if (status === "approved" || status === "rejected") {
+    if (status === "rejected") {
       try {
         await supabase.functions.invoke("send-booking-email", {
-          body: { type: status, booking_id: bookingId },
+          body: { type: "rejected", booking_id: bookingId },
         });
       } catch (e) {
         console.error("email failed", e);
@@ -230,6 +249,9 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
         </div>
         <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground pt-1">
           Zahlung: <span className="text-foreground">{b.payment_status}</span>
+          {b.payment_deadline && b.status === "approved" && b.payment_status === "unpaid" && (
+            <> · Frist bis <span className="text-foreground">{format(new Date(b.payment_deadline), "dd.MM.yyyy HH:mm", { locale: de })}</span></>
+          )}
         </p>
       </div>
 
@@ -271,11 +293,11 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
         {b.status === "pending" && (
           <>
             <button
-              onClick={() => updateStatus("approved")}
+              onClick={approveAndSendPayment}
               disabled={acting}
               className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-50 transition-colors"
             >
-              <Check className="w-3.5 h-3.5" /> Bestätigen
+              <Check className="w-3.5 h-3.5" /> Freigeben & Zahlungslink senden
             </button>
             <button
               onClick={() => updateStatus("rejected")}
