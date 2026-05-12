@@ -467,7 +467,7 @@ const BookingSystem = () => {
                 disabled={!canNext || submitting}
                 className="flex items-center gap-2 px-8 py-3 font-body text-xs tracking-[0.2em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                {submitting ? "Wird vorbereitet..." : `Jetzt zahlen · €${pricing.total.toFixed(2)}`}
+                {submitting ? "Wird gesendet..." : `Anfrage senden · €${pricing.total.toFixed(2)}`}
                 {!submitting && <Check className="w-3.5 h-3.5" />}
               </button>
             )}
