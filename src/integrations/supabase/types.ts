@@ -71,6 +71,7 @@ export type Database = {
           message: string | null
           nights: number
           paddle_transaction_id: string | null
+          payment_deadline: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           persons: number
           phone: string
@@ -105,6 +106,7 @@ export type Database = {
           message?: string | null
           nights?: number
           paddle_transaction_id?: string | null
+          payment_deadline?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           persons?: number
           phone: string
@@ -139,6 +141,7 @@ export type Database = {
           message?: string | null
           nights?: number
           paddle_transaction_id?: string | null
+          payment_deadline?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           persons?: number
           phone?: string
@@ -356,6 +359,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expire_unpaid_bookings: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -367,7 +371,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       booking_status: "pending" | "approved" | "rejected" | "paid" | "cancelled"
-      payment_status: "unpaid" | "paid" | "refunded"
+      payment_status: "unpaid" | "paid" | "refunded" | "failed" | "expired"
       spot_availability: "available" | "partial" | "unavailable"
     }
     CompositeTypes: {
@@ -498,7 +502,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       booking_status: ["pending", "approved", "rejected", "paid", "cancelled"],
-      payment_status: ["unpaid", "paid", "refunded"],
+      payment_status: ["unpaid", "paid", "refunded", "failed", "expired"],
       spot_availability: ["available", "partial", "unavailable"],
     },
   },

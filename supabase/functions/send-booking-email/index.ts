@@ -14,7 +14,7 @@ interface AdminNewRequest {
 }
 
 interface CustomerDecisionRequest {
-  type: "approved" | "rejected";
+  type: "approved" | "rejected" | "request_received" | "paid" | "expired" | "refunded";
   booking_id: string;
   payment_url?: string;
 }
