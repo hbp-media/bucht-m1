@@ -1,6 +1,17 @@
-// Server-side price recalculation. Source of truth — never trust client total_price.
+// Server-side price recalculation. Mirrors src/lib/pricing.ts exactly.
+// Source of truth — never trust client total_price.
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+
+const PRICES = {
+  LICENSE_BASE: 130,
+  LICENSE_EXTRA_24H: 40,
+  ACCOMMODATION_BASE: 40,
+  ACCOMMODATION_EXTRA_PERSON: 10,
+  CLEANING_PER_PERSON: 5,
+  ALL_INCLUSIVE_PER_PERSON_24H: 15,
+  COMPANION_PRICE_PER_24H: 10,
+} as const;
 
 export interface BookingInput {
   spot_id: string;
@@ -12,7 +23,7 @@ export interface BookingInput {
   accommodation_type: string;
   accommodation_persons: number;
   all_inclusive: boolean;
-  extras: Array<{ id?: string; code?: string; quantity?: number }>;
+  extras: Array<{ id?: string; quantity?: number }>;
 }
 
 export interface PricingResult {
@@ -25,78 +36,102 @@ export interface PricingResult {
     id: string;
     code: string | null;
     name: string;
-    quantity: number;
+    unit: string;
     unit_price: number;
+    quantity: number;
     total: number;
   }>;
   total_price: number;
 }
 
-// Mirrors src/lib/pricing.ts (or equivalent). Keep this in sync with the frontend.
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+const calcExtra24hBlocks = (nights: number) => (nights <= 3 ? 0 : nights - 3);
+
+const calcExtraTotal = (
+  ex: { price: number | string; unit: string },
+  ctx: { quantity: number; nights: number },
+) => {
+  const price = Number(ex.price);
+  const qty = Math.max(1, ctx.quantity || 1);
+  const nights = Math.max(1, ctx.nights);
+  switch (ex.unit) {
+    case 'flat': return price;
+    case 'per_day':
+    case 'per_24h': return price * nights;
+    case 'per_kg':
+    case 'per_piece': return price * qty;
+    default: return price;
+  }
+};
+
 export async function recalculatePrice(
   admin: SupabaseClient,
   input: BookingInput,
 ): Promise<PricingResult> {
-  // 1) Spot
   const { data: spot, error: spotErr } = await admin
     .from('fishing_spots')
-    .select('id, price_per_day, accommodation_type, max_persons, active')
+    .select('id, accommodation_type, max_persons, active')
     .eq('id', input.spot_id)
     .maybeSingle();
-  if (spotErr || !spot) throw new Error('Spot not found');
-  if (!spot.active) throw new Error('Spot inactive');
-  if (input.persons > spot.max_persons) throw new Error('Too many anglers for spot');
+  if (spotErr || !spot) throw new Error('Spot nicht gefunden');
+  if (!spot.active) throw new Error('Spot nicht verfügbar');
+  if (input.persons > spot.max_persons) throw new Error('Zu viele Angler für diesen Platz');
 
-  const spotPricePerDay = Number(spot.price_per_day || 0);
+  // 1) Lizenz: Wochenend-Basis + Extra-24h-Blöcke
+  const license_price =
+    PRICES.LICENSE_BASE + calcExtra24hBlocks(input.nights) * PRICES.LICENSE_EXTRA_24H;
 
-  // 2) License — base × nights, plus extra 24h blocks for free booking mode
-  const baseDays = Math.max(1, input.nights);
-  const license_price = spotPricePerDay * baseDays + spotPricePerDay * (input.extra_24h_blocks || 0);
-
-  // 3) Accommodation — only if spot supports it
+  // 2) Unterkunft + Reinigung
   let accommodation_price = 0;
   let cleaning_price = 0;
   if (input.accommodation_type !== 'none') {
     if (input.accommodation_type !== spot.accommodation_type) {
-      throw new Error('Accommodation type not available on this spot');
+      throw new Error('Unterkunftstyp passt nicht zum Platz');
     }
-    // Pauschalpreise (an bestehende Frontend-Logik angelehnt)
-    if (input.accommodation_type === 'hut') {
-      accommodation_price = 80 * input.nights * Math.max(1, input.accommodation_persons);
-      cleaning_price = 30;
-    } else if (input.accommodation_type === 'caravan') {
-      accommodation_price = 60 * input.nights * Math.max(1, input.accommodation_persons);
-      cleaning_price = 25;
+    if (input.accommodation_persons > 0 && input.nights > 0) {
+      const extraPersons = Math.max(0, input.accommodation_persons - 2);
+      accommodation_price =
+        input.nights * PRICES.ACCOMMODATION_BASE +
+        extraPersons * input.nights * PRICES.ACCOMMODATION_EXTRA_PERSON;
+      cleaning_price = input.accommodation_persons * PRICES.CLEANING_PER_PERSON;
     }
   }
 
-  // 4) All inclusive — pro Person pro Nacht
+  // 3) All inclusive (gilt für Angler + Begleitpersonen)
+  const totalPersons = input.persons + (input.companions || 0);
   const all_inclusive_price = input.all_inclusive
-    ? 45 * input.nights * (input.persons + (input.companions || 0))
+    ? totalPersons * input.nights * PRICES.ALL_INCLUSIVE_PER_PERSON_24H
     : 0;
 
-  // 5) Extras — aus DB ziehen
-  const extraIds = (input.extras || []).map((e) => e.id).filter(Boolean) as string[];
-  let extrasResolved: PricingResult['extras_resolved'] = [];
-  let extras_price = 0;
-  if (extraIds.length) {
-    const { data: rows, error: exErr } = await admin
+  // 4) Begleiter-Pauschale (wird wie ein Extra im Frontend behandelt; hier addiert)
+  const companions_price =
+    input.companions > 0 && input.nights > 0
+      ? input.companions * input.nights * PRICES.COMPANION_PRICE_PER_24H
+      : 0;
+
+  // 5) Extras
+  const ids = (input.extras || []).map((e) => e.id).filter(Boolean) as string[];
+  const extras_resolved: PricingResult['extras_resolved'] = [];
+  let extras_price = companions_price; // Begleitkosten in extras_price gebündelt
+  if (ids.length) {
+    const { data: rows } = await admin
       .from('extras')
-      .select('id, code, name, price, allow_quantity, active')
-      .in('id', extraIds);
-    if (exErr) throw new Error('Failed to load extras');
+      .select('id, code, name, price, unit, allow_quantity, active')
+      .in('id', ids);
     for (const wanted of input.extras) {
       const ex = rows?.find((r: any) => r.id === wanted.id);
       if (!ex || !ex.active) continue;
       const qty = ex.allow_quantity ? Math.max(1, Number(wanted.quantity || 1)) : 1;
-      const total = Number(ex.price) * qty;
+      const total = calcExtraTotal(ex as any, { quantity: qty, nights: input.nights });
       extras_price += total;
-      extrasResolved.push({
+      extras_resolved.push({
         id: ex.id,
         code: ex.code,
         name: ex.name,
-        quantity: qty,
+        unit: ex.unit,
         unit_price: Number(ex.price),
+        quantity: qty,
         total,
       });
     }
@@ -111,9 +146,7 @@ export async function recalculatePrice(
     cleaning_price: round2(cleaning_price),
     all_inclusive_price: round2(all_inclusive_price),
     extras_price: round2(extras_price),
-    extras_resolved: extrasResolved,
+    extras_resolved,
     total_price: round2(total_price),
   };
 }
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
