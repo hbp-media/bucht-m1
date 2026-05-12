@@ -68,7 +68,6 @@ const AdminExtras = () => {
       .update({
         name: draft.name,
         description: draft.description,
-        price: Number(draft.price),
         active: draft.active,
       })
       .eq("id", editingId);
