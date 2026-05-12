@@ -85,7 +85,10 @@ const PayBlock = ({ booking, onPaid }: { booking: Booking; onPaid: () => void })
             toast({ title: "Zahlung erfolgreich", description: "Deine Buchung ist gesichert." });
             setTimeout(onPaid, 1500);
           }
-          if (ev?.name === "checkout.closed") setBusy(false);
+          if (ev?.name === "checkout.closed") {
+            setBusy(false);
+            onPaid();
+          }
         },
       });
     } catch (e: any) {
