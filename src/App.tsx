@@ -49,6 +49,9 @@ const App = () => (
             <Route path="/anfahrt" element={<Anfahrt />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/kontakt" element={<Kontakt />} />
+            <Route path="/agb" element={<AGB />} />
+            <Route path="/widerruf" element={<Widerruf />} />
+            <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
