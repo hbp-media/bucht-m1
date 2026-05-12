@@ -28,7 +28,6 @@ import {
   type ExtraUnit,
 } from "@/lib/pricing";
 import { buildWeekendRange, nextFriday } from "@/lib/weekend";
-import { initializePaddle, getPaddleEnvironment } from "@/lib/paddle";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const STEPS = [
