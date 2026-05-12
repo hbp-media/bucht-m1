@@ -77,12 +77,20 @@ const Footer = () => {
           <p className="font-body text-xs text-background/40">
             © BuchtM1.at 2026
           </p>
-          <Link
-            to="/impressum"
-            className="font-body text-xs text-background/40 hover:text-accent transition-colors duration-300"
-          >
-            Impressum
-          </Link>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <Link to="/impressum" className="font-body text-xs text-background/40 hover:text-accent transition-colors duration-300">
+              Impressum
+            </Link>
+            <Link to="/agb" className="font-body text-xs text-background/40 hover:text-accent transition-colors duration-300">
+              AGB
+            </Link>
+            <Link to="/widerruf" className="font-body text-xs text-background/40 hover:text-accent transition-colors duration-300">
+              Widerruf
+            </Link>
+            <Link to="/datenschutz" className="font-body text-xs text-background/40 hover:text-accent transition-colors duration-300">
+              Datenschutz
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
