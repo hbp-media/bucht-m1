@@ -290,11 +290,11 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
         {b.status === "pending" && (
           <>
             <button
-              onClick={() => updateStatus("approved")}
+              onClick={approveAndSendPayment}
               disabled={acting}
               className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-50 transition-colors"
             >
-              <Check className="w-3.5 h-3.5" /> Bestätigen
+              <Check className="w-3.5 h-3.5" /> Freigeben & Zahlungslink senden
             </button>
             <button
               onClick={() => updateStatus("rejected")}
