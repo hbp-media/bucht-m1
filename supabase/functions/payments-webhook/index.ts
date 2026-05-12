@@ -33,19 +33,19 @@ async function handleTransactionCompleted(data: any) {
     .eq('id', bookingId);
   if (error) console.error('booking update failed', error);
 
-  // Send confirmation emails
+  // Send confirmation emails (admin_new for staff + approved for customer)
   try {
     const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-booking-email`;
-    await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-      },
-      body: JSON.stringify({ type: 'admin_paid', booking_id: bookingId }),
-    });
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+    };
+    await Promise.all([
+      fetch(url, { method: 'POST', headers, body: JSON.stringify({ type: 'admin_new', booking_id: bookingId }) }),
+      fetch(url, { method: 'POST', headers, body: JSON.stringify({ type: 'approved', booking_id: bookingId }) }),
+    ]);
   } catch (e) {
-    console.error('admin notification failed', e);
+    console.error('booking notification failed', e);
   }
 }
 
