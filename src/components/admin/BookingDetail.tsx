@@ -69,7 +69,26 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
     load();
   }, [bookingId]);
 
-  const updateStatus = async (status: "approved" | "rejected" | "paid") => {
+  const approveAndSendPayment = async () => {
+    setActing(true);
+    const { data, error } = await supabase.functions.invoke("approve-booking", {
+      body: { bookingId, deadlineMinutes: 60 },
+    });
+    if (error) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      setActing(false);
+      return;
+    }
+    toast({
+      title: "Freigegeben",
+      description: "Zahlungslink wurde an den Kunden gesendet (60 Min Frist).",
+    });
+    setActing(false);
+    onChanged?.();
+    load();
+  };
+
+  const updateStatus = async (status: "rejected" | "paid") => {
     setActing(true);
     const { error } = await supabase.from("bookings").update({ status }).eq("id", bookingId);
     if (error) {
@@ -77,10 +96,10 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
       setActing(false);
       return;
     }
-    if (status === "approved" || status === "rejected") {
+    if (status === "rejected") {
       try {
         await supabase.functions.invoke("send-booking-email", {
-          body: { type: status, booking_id: bookingId },
+          body: { type: "rejected", booking_id: bookingId },
         });
       } catch (e) {
         console.error("email failed", e);
