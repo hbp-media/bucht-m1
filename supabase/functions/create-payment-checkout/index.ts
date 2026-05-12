@@ -107,6 +107,11 @@ Deno.serve(async (req) => {
             tax_mode: 'account_setting',
             unit_price: { amount: String(totalCents), currency_code: 'EUR' },
             quantity: { minimum: 1, maximum: 1 },
+            product: {
+              name: 'Angelplatz-Buchung Bucht M1',
+              description,
+              tax_category: 'standard',
+            },
           },
         }],
         customer: { email: b.email },
