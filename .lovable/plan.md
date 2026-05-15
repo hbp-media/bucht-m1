@@ -1,117 +1,121 @@
+# Umstellung: Paddle raus, manuelle Überweisung rein
 
-# Plan: Buchungs‑ & Bezahl‑Refactor
-
-## Neuer Flow
+## Neuer Ablauf
 
 ```
-1. User füllt Buchung aus → "Anfrage senden" (KEINE Zahlung)
-   → Booking wird angelegt: status='pending', payment_status='unpaid'
-   → E-Mail an Admin (neue Anfrage) + an User (Bestätigung Anfrage erhalten)
-
-2. Admin sieht Anfrage in /admin → klickt "Freigeben & Zahlungslink senden"
-   → status='approved', payment_status='unpaid', payment_deadline = jetzt + 60 Min
-   → E-Mail an User mit Link /account?pay={bookingId}
-
-3. User klickt Link → Paddle Overlay öffnet sich
-   → Server berechnet Preis aus DB neu (NICHT vom Client vertrauen)
-   → Paddle-Transaction wird erzeugt
-
-4. Zahlung erfolgreich → Webhook
-   → status='paid', payment_status='paid'
-   → Bestätigungs-E-Mails (Kunde + Admin)
-
-5. Wenn User binnen 60 Min nicht zahlt → Cron-Job
-   → status='rejected' (Spot wieder frei), E-Mail an User "Zahlungsfrist verstrichen"
+Kunde bucht ──► status: pending
+                  │
+                  ▼
+Admin gibt frei ──► status: approved
+                     • Anzahlung = 50% des Gesamtpreises
+                     • Frist: 24h
+                     • Mail mit Bankdaten + Betrag + Frist
+                     • In-App-Notification
+                  │
+       ┌──────────┴──────────┐
+       ▼                     ▼
+  Bezahlt in 24h?      Frist verstrichen
+  Admin klickt         → automatisch storniert
+  "Anzahlung           (Cron, schon vorhanden)
+   erhalten"
+       │
+       ▼
+  status: deposit_paid
+       │
+       ▼
+  X Tage vor Termin: Restzahlung fällig
+  (Mail an Kunde, Admin klickt "Restzahlung erhalten")
+       │
+       ▼
+  status: paid
 ```
 
-## Datenbank-Änderungen
+**Storno-Regel:** Bis Y Tage vor Termin kostenfrei stornierbar.
+Danach verfällt die Anzahlung.
 
-- `bookings.payment_deadline timestamptz NULL` — Frist nach Admin‑Freigabe
-- Neuer Status: `awaiting_admin` ist nicht nötig — `pending` reicht (wie bisher)
-- pg_cron Job alle 5 Min: `UPDATE bookings SET status='rejected', payment_status='expired' WHERE status='approved' AND payment_status='unpaid' AND payment_deadline < now()`
-- `prevent_booking_overlap` zählt weiterhin `pending`/`approved`/`paid` als Sperrung (unverändert)
+## Was geändert wird
 
-## Edge Functions
+### 1. Datenbank
 
-- **`create-booking-request`** (NEU, ersetzt create-booking-checkout):
-  - Lädt spot, extras aus DB, **rechnet total_price serverseitig neu** (Schutz vor Manipulation)
-  - Insert booking als `pending/unpaid`, KEIN Paddle-Call
-  - Triggert E-Mails (admin_new + user_received)
+**Neue Tabelle `payment_settings`** (1-Zeilen-Konfig):
+- `bank_holder`, `iban`, `bic` — Bankdaten für Mail
+- `deposit_deadline_hours` (Default 24) — Frist für Anzahlung
+- `full_payment_days_before` (Default später eintragen, vorerst 14)
+- `cancellation_days_before` (Default später eintragen, vorerst 14)
+- `deposit_percent` (Default 50)
 
-- **`approve-booking`** (NEU):
-  - Admin-only (RBAC check)
-  - setzt status='approved', payment_deadline = now() + 60min
-  - Triggert E-Mail an User mit Zahlungslink
+**Bookings-Tabelle erweitern:**
+- `deposit_amount` numeric — berechneter 50%-Betrag
+- `deposit_paid_at` timestamp — wann Admin Anzahlung markiert hat
+- `final_payment_due_date` date — X Tage vor start_date
+- `final_paid_at` timestamp
+- Neue `payment_status` Werte: `deposit_pending`, `deposit_paid`, `paid`, `expired`, `refunded`
 
-- **`create-payment-checkout`** (NEU, ersetzt alten Custom-Txn-Teil):
-  - User-only, prüft: booking gehört user, status='approved', payment_deadline > now()
-  - Berechnet Preis nochmal aus DB (nicht aus Booking-Row, falls manipuliert)
-  - Erzeugt Paddle-Transaction → returnt transactionId
+**Cron-Funktion `expire_unpaid_bookings`** umstellen: prüft jetzt `deposit_pending` + 24h-Frist statt Paddle-Deadline.
 
-- **`payments-webhook`** (UPDATE):
-  - bisherige Logik bleibt
-  - + neuer Handler `adjustment.created` (action='refund') → setzt status='rejected', payment_status='refunded' → Spot frei
+### 2. Admin-Bereich
 
-- **`cleanup-expired-bookings`** (NEU, scheduled via pg_cron):
-  - Markiert abgelaufene approved/unpaid bookings als rejected/expired
-  - Sendet "Frist abgelaufen" E-Mail
+**Neue Seite `/admin` → Tab „Einstellungen"**
+- Felder: Kontoinhaber, IBAN, BIC
+- Slider/Inputs: Anzahlungs-Frist (h), Restzahlung-Tage-vorher, Storno-Tage-vorher, Anzahlungs-Prozent
+- Speichern-Button
 
-- **`send-booking-email`** (UPDATE):
-  - Neue Templates: `request_received`, `approved_pay_now`, `payment_expired`, `refunded`
+**Buchungsdetail (`BookingDetail.tsx`):**
+- Paddle-Bezug raus
+- Neue Buttons:
+  - „Buchung freigeben" (wie bisher, jetzt mit Anzahlungs-Mail)
+  - „Anzahlung erhalten" (nach Freigabe)
+  - „Restzahlung erhalten" (nach Anzahlung)
+  - „Stornieren" (markiert je nach Frist als storniert/refundiert)
+- Anzeige: Anzahlungsbetrag, Restbetrag, Fristen, Bezahl-Status
 
-## Frontend
+### 3. Kunden-Bereich
 
-- **BookingSystem.tsx**: „Bezahlen" → „Anfrage senden". Success-Screen: „Wir prüfen deine Anfrage und senden dir innerhalb von 24h einen Zahlungslink per E‑Mail."
-- **MyBookings.tsx**:
-  - Bei `approved/unpaid` mit aktiver `payment_deadline`: prominenter „Jetzt bezahlen" Button + Countdown
-  - Cancel-Button NUR bei `pending` (RLS-konform)
-  - Payment-Status-Labels erweitern: `expired`, `refunded`
-- **Account.tsx**: liest URL `?pay={id}` → öffnet automatisch Paddle Overlay; `?checkout=success` → Toast + reload
-- **AdminBookings/BookingDetail**: 
-  - Bei `pending`: Button „Freigeben & Zahlungslink senden" (statt direkt approved setzen)
-  - Anzeige `payment_deadline` mit Countdown bei approved/unpaid
+**`MyBookings.tsx`:**
+- Paddle-Checkout-Button raus
+- Stattdessen Status-Anzeige mit Bankdaten + Verwendungszweck (Buchungs-ID)
+- Klare Anzeige: „Bitte bis HH:MM überweisen" / „Anzahlung erhalten — Restzahlung bis TT.MM."
 
-## Sicherheit
+### 4. E-Mails (über bestehendes SMTP2GO via `send-booking-email`)
 
-- ✅ Server-side price recalculation in beiden Edge Functions (verhindert 1€‑Buchungen)
-- ✅ Admin‑only Approval mit `has_role` check
-- ✅ Payment-Edge prüft Booking‑Owner, Status, Deadline
-- ✅ Webhook signature verification (existiert bereits)
+Neue Templates:
+- `deposit_request` — bei Freigabe: Bankdaten + Betrag + 24h-Frist
+- `deposit_received` — Bestätigung nach Admin-Klick
+- `final_payment_request` — X Tage vor Termin
+- `final_payment_received` — nach Admin-Klick
+- `cancelled_deposit_forfeit` — bei zu später Storno
+- `auto_expired` — bei abgelaufener Anzahlungsfrist
 
-## Legal Pages (für Paddle Go‑Live)
+### 5. Paddle entfernen
 
-Muss ich neue Seiten anlegen: `/agb`, `/widerruf`, `/datenschutz`. Brauche:
-- **Legaler Geschäftsname** (oder dein Privatname, falls als Privatperson)
-- Adresse für Impressum (existiert evtl. schon)
+- `src/lib/paddle.ts` — löschen
+- `src/components/PaymentTestModeBanner.tsx` — löschen
+- `App.tsx`/Layout — Banner-Import raus
+- `.env.development` / `.env.production` — `VITE_PAYMENTS_CLIENT_TOKEN` raus
+- Edge Functions löschen: `create-booking-checkout`, `create-payment-checkout`, `payments-webhook`
+- `bookings.paddle_transaction_id` Spalte: behalten (alte Buchungen referenzieren sie evtl.), aber nicht mehr nutzen
+- Paddle-Secrets bleiben in den Connectors (kann der User selbst trennen)
 
-Refund-Policy formuliere ich Paddle‑konform aber praxisnah:
-> „14 Tage Widerrufsrecht für nicht angetretene Buchungen. Ab dem Anreisedatum oder bei Nichtantritt verfällt der Buchungswert. Erstattungsanträge an info@buchtm1.at — Bearbeitung durch Paddle."
+## Was später noch von dir kommt
 
-So bist du legal sauber, aber faktisch musst du nur erstatten wenn jemand >14 Tage vor Anreise storniert UND noch nicht angereist ist.
+- Echte Bankdaten (Kontoinhaber, IBAN, BIC)
+- Restzahlung-Tage-vorher (Default 14)
+- Storno-Tage-vorher (Default 14)
+- Wie Restzahlung läuft (Überweisung / bar / Wahl)
 
-## Test‑Anleitung (Preview)
+→ Default-Werte 14/14 setze ich jetzt, du änderst sie später jederzeit in den Admin-Einstellungen ohne Code-Änderung.
 
-1. **Anfrage stellen**: Als User einloggen → Buchung ausfüllen → „Anfrage senden" → Bestätigung sehen
-2. **Admin‑Freigabe**: Als Admin (kevin.hoffmann1@gmx.at) einloggen → /admin → Anfrage öffnen → „Freigeben"
-3. **Zahlung**: Als User → /account → „Jetzt bezahlen" → Paddle Overlay → Testkarte:
-   - Karte: `4242 4242 4242 4242`
-   - CVC: `123`
-   - Datum: beliebiges zukünftiges (z.B. 12/30)
-4. **Status prüfen**: Buchung sollte automatisch auf „Bezahlt" springen, E‑Mails ankommen
-5. **Abbruch testen**: Anfrage stellen → freigeben → 60 Min warten (oder manuell via SQL deadline auf gestern setzen) → Cron sollte sie auf rejected setzen
-6. **Refund testen**: Im Paddle Sandbox‑Dashboard → Transaction → Refund → Webhook sollte Buchung als refunded markieren
+## Reihenfolge der Umsetzung
 
-## Reihenfolge der Implementierung
+1. Migration: `payment_settings` Tabelle + `bookings`-Spalten + `payment_status`-Enum erweitern + Cron-Funktion umstellen
+2. Admin-Settings-Page bauen
+3. `BookingDetail.tsx` umstellen (neue Buttons, Paddle raus)
+4. `MyBookings.tsx` umstellen (Bankdaten-Anzeige statt Checkout)
+5. `send-booking-email` um neue Templates erweitern
+6. `approve-booking` Edge Function: berechnet Anzahlung, setzt 24h-Frist, sendet `deposit_request`
+7. Neue Edge Functions: `mark-deposit-paid`, `mark-final-paid`, `cancel-booking-admin`
+8. Cron-Job für Restzahlungs-Erinnerung (täglich, prüft `final_payment_due_date`)
+9. Paddle-Code & Edge Functions löschen
+10. Test-Lauf der ganzen Strecke
 
-1. DB‑Migration (payment_deadline + pg_cron)
-2. Edge Functions (request/approve/payment/cleanup) + Email‑Templates
-3. Webhook erweitern
-4. Frontend (BookingSystem, MyBookings, Account, Admin)
-5. Legal Pages (sobald du mir den Geschäftsnamen gibst)
-
----
-
-**Was ich von dir noch brauche:**
-1. **Geschäftsname** für die Legal Pages (oder „Privatperson + dein Name")
-2. Bestätigung, dass die **Refund‑Policy‑Formulierung oben** für dich passt (Paddle‑konform, faktisch fast keine Erstattungen)
-3. Bestätigung der **60 Min Zahlungsfrist nach Admin‑Freigabe** — das ist sehr knapp. 24 Stunden wären realistischer (User checkt evtl. erst abends Mail). Was bevorzugst du?
+Soll ich so loslegen?
