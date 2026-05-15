@@ -600,6 +600,39 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (
+      body.type === "deposit_request" ||
+      body.type === "deposit_received" ||
+      body.type === "final_payment_request" ||
+      body.type === "final_payment_received" ||
+      body.type === "cancelled_deposit_forfeit"
+    ) {
+      const { data: settings } = await supabase
+        .from("payment_settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+      const s: PaySettings = {
+        bank_holder: settings?.bank_holder ?? "",
+        iban: settings?.iban ?? "",
+        bic: settings?.bic ?? "",
+        deposit_deadline_hours: settings?.deposit_deadline_hours ?? 24,
+        deposit_percent: settings?.deposit_percent ?? 50,
+        full_payment_days_before: settings?.full_payment_days_before ?? 14,
+        cancellation_days_before: settings?.cancellation_days_before ?? 14,
+      };
+      let mail;
+      if (body.type === "deposit_request") mail = depositRequestEmail(booking, s);
+      else if (body.type === "deposit_received") mail = depositReceivedEmail(booking, s);
+      else if (body.type === "final_payment_request") mail = finalPaymentRequestEmail(booking, s);
+      else if (body.type === "final_payment_received") mail = finalPaymentReceivedEmail(booking);
+      else mail = cancelledForfeitEmail(booking);
+      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown type" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
