@@ -22,7 +22,12 @@ interface CustomerDecisionRequest {
     | "paid"
     | "expired"
     | "payment_expired"
-    | "refunded";
+    | "refunded"
+    | "deposit_request"
+    | "deposit_received"
+    | "final_payment_request"
+    | "final_payment_received"
+    | "cancelled_deposit_forfeit";
   booking_id: string;
   payment_url?: string;
 }
@@ -297,6 +302,148 @@ const expiredEmail = (b: BookingDetails) => {
         <p style="font-size:13px;color:#666;margin-top:30px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
       </div>`,
     text: `Hallo ${b.first_name}, die Zahlungsfrist für ${b.spot_name} (${dateRange}) ist abgelaufen. Der Platz ist wieder verfügbar.`,
+  };
+};
+
+interface PaySettings {
+  bank_holder: string;
+  iban: string;
+  bic: string;
+  deposit_deadline_hours: number;
+  deposit_percent: number;
+  full_payment_days_before: number;
+  cancellation_days_before: number;
+}
+
+const renderBankBlock = (s: PaySettings, amount: number, reference: string, deadline?: string) => {
+  const ibanDisplay = s.iban ? s.iban.replace(/(.{4})/g, "$1 ").trim() : "—";
+  return `
+    <div style="background:#f5f5f0;padding:18px 20px;margin:18px 0;border-left:3px solid #8a7530;">
+      <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:#4a5a3a;">Banküberweisung</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;color:#1a1a1a;">
+        <tr><td style="padding:3px 0;width:140px;color:#666;">Empfänger</td><td style="padding:3px 0;"><strong>${s.bank_holder || "—"}</strong></td></tr>
+        <tr><td style="padding:3px 0;color:#666;">IBAN</td><td style="padding:3px 0;font-family:monospace;"><strong>${ibanDisplay}</strong></td></tr>
+        <tr><td style="padding:3px 0;color:#666;">BIC</td><td style="padding:3px 0;font-family:monospace;"><strong>${s.bic || "—"}</strong></td></tr>
+        <tr><td style="padding:3px 0;color:#666;">Betrag</td><td style="padding:3px 0;"><strong style="color:#4a5a3a;font-size:15px;">€${amount.toFixed(2)}</strong></td></tr>
+        <tr><td style="padding:3px 0;color:#666;">Verwendungszweck</td><td style="padding:3px 0;font-family:monospace;"><strong>${reference}</strong></td></tr>
+        ${deadline ? `<tr><td style="padding:3px 0;color:#666;">Frist</td><td style="padding:3px 0;color:#a02020;"><strong>${deadline}</strong></td></tr>` : ""}
+      </table>
+    </div>`;
+};
+
+const fmtDateTime = (s: string) =>
+  new Date(s).toLocaleString("de-AT", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+const depositRequestEmail = (b: BookingDetails, s: PaySettings) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  const deposit = Math.round(b.total_price * s.deposit_percent) / 100;
+  const deadline = new Date(Date.now() + (s.deposit_deadline_hours || 24) * 3600_000);
+  const ref = `Bucht M1 / ${b.last_name} / ${b.id.slice(0, 8)}`;
+  return {
+    subject: `Anzahlung für deine Buchung – €${deposit.toFixed(2)}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Buchung freigegeben ✓</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">
+          deine Anfrage für <strong>${b.spot_name}</strong> (${dateRange}) wurde geprüft und freigegeben.
+          Damit wir die Reservierung verbindlich sichern können, bitten wir dich um eine
+          <strong>Anzahlung von €${deposit.toFixed(2)} (${s.deposit_percent}%)</strong> innerhalb von
+          <strong>${s.deposit_deadline_hours} Stunden</strong>. Die Restzahlung ist
+          ${s.full_payment_days_before} Tage vor Anreise fällig.
+        </p>
+        ${renderBankBlock(s, deposit, ref, fmtDateTime(deadline.toISOString()))}
+        <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Gesamtaufstellung</h3>
+        ${renderPriceTable(b)}
+        <p style="font-size:12px;line-height:1.6;color:#888;margin-top:24px;">
+          Wichtig: Bitte gib den Verwendungszweck genau wie oben angegeben an, sonst können wir die Zahlung nicht zuordnen.
+          Geht die Anzahlung nicht rechtzeitig ein, wird die Reservierung automatisch storniert.
+        </p>
+        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, bitte überweise eine Anzahlung von €${deposit.toFixed(2)} an ${s.bank_holder} IBAN ${s.iban} BIC ${s.bic}. Verwendungszweck: ${ref}. Frist: ${fmtDateTime(deadline.toISOString())}.`,
+  };
+};
+
+const depositReceivedEmail = (b: BookingDetails, s: PaySettings) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  const finalDue = b.total_price - (Math.round(b.total_price * s.deposit_percent) / 100);
+  return {
+    subject: "Anzahlung erhalten – Buchung gesichert",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Anzahlung erhalten ✓</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">
+          deine Anzahlung für <strong>${b.spot_name}</strong> (${dateRange}) ist bei uns eingegangen.
+          Die Reservierung ist nun verbindlich gesichert.
+        </p>
+        <p style="font-size:14px;line-height:1.6;">
+          Die <strong>Restzahlung von €${finalDue.toFixed(2)}</strong> wird ${s.full_payment_days_before} Tage vor Anreise fällig –
+          du erhältst rechtzeitig eine separate E-Mail mit den Bankdaten.
+        </p>
+        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, deine Anzahlung für ${b.spot_name} (${dateRange}) ist eingegangen. Restzahlung €${finalDue.toFixed(2)} ${s.full_payment_days_before} Tage vor Anreise.`,
+  };
+};
+
+const finalPaymentRequestEmail = (b: BookingDetails, s: PaySettings) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  const deposit = Math.round(b.total_price * s.deposit_percent) / 100;
+  const finalDue = b.total_price - deposit;
+  const ref = `Bucht M1 / ${b.last_name} / ${b.id.slice(0, 8)}`;
+  return {
+    subject: `Restzahlung für deine Buchung – €${finalDue.toFixed(2)}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Restzahlung fällig</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">
+          deine Anreise zum <strong>${b.spot_name}</strong> am <strong>${fmt(b.start_date)}</strong> rückt näher.
+          Bitte überweise die Restzahlung von <strong>€${finalDue.toFixed(2)}</strong> bis spätestens
+          <strong>${fmt(b.start_date)}</strong> (${s.full_payment_days_before} Tage vor Anreise).
+        </p>
+        ${renderBankBlock(s, finalDue, ref)}
+        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, bitte Restzahlung €${finalDue.toFixed(2)} an ${s.bank_holder} IBAN ${s.iban} überweisen. Verwendungszweck: ${ref}.`,
+  };
+};
+
+const finalPaymentReceivedEmail = (b: BookingDetails) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  return {
+    subject: "Vollständige Zahlung erhalten – wir freuen uns auf dich",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Alles bezahlt ✓</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">
+          deine Restzahlung für <strong>${b.spot_name}</strong> (${dateRange}) ist eingegangen.
+          Wir freuen uns auf deinen Besuch!
+        </p>
+        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, deine Restzahlung für ${b.spot_name} (${dateRange}) ist eingegangen.`,
+  };
+};
+
+const cancelledForfeitEmail = (b: BookingDetails) => {
+  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  return {
+    subject: "Buchung storniert",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+        <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 20px;">Buchung storniert</h1>
+        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
+        <p style="font-size:14px;line-height:1.6;">
+          deine Buchung für <strong>${b.spot_name}</strong> (${dateRange}) wurde storniert.
+          Da die Stornierung nach Ablauf der Storno-Frist erfolgte, verfällt die geleistete Anzahlung gemäß unseren Bedingungen.
+        </p>
+        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+      </div>`,
+    text: `Hallo ${b.first_name}, deine Buchung für ${b.spot_name} (${dateRange}) wurde storniert. Anzahlung verfällt.`,
   };
 };
 
