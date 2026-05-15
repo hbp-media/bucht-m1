@@ -56,14 +56,19 @@ export type Database = {
           all_inclusive_price: number
           base_price: number
           booking_mode: string
+          cancelled_at: string | null
           cleaning_price: number
           companions: number
           created_at: string
+          deposit_amount: number
+          deposit_paid_at: string | null
           email: string
           end_date: string
           extra_24h_blocks: number
           extras: Json
           extras_price: number
+          final_paid_at: string | null
+          final_payment_due_date: string | null
           first_name: string
           id: string
           last_name: string
@@ -91,14 +96,19 @@ export type Database = {
           all_inclusive_price?: number
           base_price?: number
           booking_mode?: string
+          cancelled_at?: string | null
           cleaning_price?: number
           companions?: number
           created_at?: string
+          deposit_amount?: number
+          deposit_paid_at?: string | null
           email: string
           end_date: string
           extra_24h_blocks?: number
           extras?: Json
           extras_price?: number
+          final_paid_at?: string | null
+          final_payment_due_date?: string | null
           first_name: string
           id?: string
           last_name: string
@@ -126,14 +136,19 @@ export type Database = {
           all_inclusive_price?: number
           base_price?: number
           booking_mode?: string
+          cancelled_at?: string | null
           cleaning_price?: number
           companions?: number
           created_at?: string
+          deposit_amount?: number
+          deposit_paid_at?: string | null
           email?: string
           end_date?: string
           extra_24h_blocks?: number
           extras?: Json
           extras_price?: number
+          final_paid_at?: string | null
+          final_payment_due_date?: string | null
           first_name?: string
           id?: string
           last_name?: string
@@ -312,6 +327,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_settings: {
+        Row: {
+          bank_holder: string
+          bic: string
+          cancellation_days_before: number
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          deposit_deadline_hours: number
+          deposit_percent: number
+          full_payment_days_before: number
+          iban: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          bank_holder?: string
+          bic?: string
+          cancellation_days_before?: number
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          deposit_deadline_hours?: number
+          deposit_percent?: number
+          full_payment_days_before?: number
+          iban?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          bank_holder?: string
+          bic?: string
+          cancellation_days_before?: number
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          deposit_deadline_hours?: number
+          deposit_percent?: number
+          full_payment_days_before?: number
+          iban?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: string
@@ -407,7 +467,14 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       booking_status: "pending" | "approved" | "rejected" | "paid" | "cancelled"
-      payment_status: "unpaid" | "paid" | "refunded" | "failed" | "expired"
+      payment_status:
+        | "unpaid"
+        | "paid"
+        | "refunded"
+        | "failed"
+        | "expired"
+        | "deposit_pending"
+        | "deposit_paid"
       spot_availability: "available" | "partial" | "unavailable"
     }
     CompositeTypes: {
@@ -538,7 +605,15 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       booking_status: ["pending", "approved", "rejected", "paid", "cancelled"],
-      payment_status: ["unpaid", "paid", "refunded", "failed", "expired"],
+      payment_status: [
+        "unpaid",
+        "paid",
+        "refunded",
+        "failed",
+        "expired",
+        "deposit_pending",
+        "deposit_paid",
+      ],
       spot_availability: ["available", "partial", "unavailable"],
     },
   },
