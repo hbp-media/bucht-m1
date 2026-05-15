@@ -17,6 +17,8 @@ import {
   MapPin,
   Save,
   Trash2,
+  Banknote,
+  CreditCard,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -41,9 +43,19 @@ const ACC_LABEL: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Anfrage",
-  approved: "Freigegeben (Zahlung offen)",
-  rejected: "Abgelehnt",
-  paid: "Bezahlt",
+  approved: "Freigegeben",
+  rejected: "Abgelehnt / Storniert",
+  paid: "Vollständig bezahlt",
+};
+
+const PAY_LABEL: Record<string, string> = {
+  unpaid: "Offen",
+  deposit_pending: "Anzahlung offen",
+  deposit_paid: "Anzahlung erhalten",
+  paid: "Vollständig bezahlt",
+  expired: "Frist abgelaufen",
+  refunded: "Erstattet",
+  failed: "Fehlgeschlagen",
 };
 
 const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
@@ -69,10 +81,10 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
     load();
   }, [bookingId]);
 
-  const approveAndSendPayment = async () => {
+  const approveAndSendDeposit = async () => {
     setActing(true);
-    const { data, error } = await supabase.functions.invoke("approve-booking", {
-      body: { bookingId, deadlineMinutes: 60 },
+    const { error } = await supabase.functions.invoke("approve-booking", {
+      body: { bookingId },
     });
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
@@ -81,31 +93,70 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
     }
     toast({
       title: "Freigegeben",
-      description: "Zahlungslink wurde an den Kunden gesendet (60 Min Frist).",
+      description: "Anzahlungs-E-Mail mit Bankdaten wurde an den Kunden gesendet.",
     });
     setActing(false);
     onChanged?.();
     load();
   };
 
-  const updateStatus = async (status: "rejected" | "paid") => {
+  const markDepositPaid = async () => {
+    if (!confirm("Bestätigst du, dass die Anzahlung auf dem Konto eingegangen ist?")) return;
     setActing(true);
-    const { error } = await supabase.from("bookings").update({ status }).eq("id", bookingId);
+    const { error } = await supabase.functions.invoke("mark-deposit-paid", {
+      body: { bookingId },
+    });
+    if (error) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Anzahlung bestätigt", description: "Kunde wurde benachrichtigt." });
+      onChanged?.();
+      load();
+    }
+    setActing(false);
+  };
+
+  const markFinalPaid = async () => {
+    if (!confirm("Bestätigst du, dass die Restzahlung eingegangen ist?")) return;
+    setActing(true);
+    const { error } = await supabase.functions.invoke("mark-final-paid", {
+      body: { bookingId },
+    });
+    if (error) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Restzahlung bestätigt" });
+      onChanged?.();
+      load();
+    }
+    setActing(false);
+  };
+
+  const reject = async () => {
+    if (!confirm("Buchung wirklich ablehnen / stornieren?")) return;
+    setActing(true);
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "rejected", cancelled_at: new Date().toISOString() })
+      .eq("id", bookingId);
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
       setActing(false);
       return;
     }
-    if (status === "rejected") {
-      try {
-        await supabase.functions.invoke("send-booking-email", {
-          body: { type: "rejected", booking_id: bookingId },
-        });
-      } catch (e) {
-        console.error("email failed", e);
-      }
+    // Mail je nach Status
+    const wasPaid = b?.payment_status === "deposit_paid" || b?.payment_status === "paid";
+    try {
+      await supabase.functions.invoke("send-booking-email", {
+        body: {
+          type: wasPaid ? "cancelled_deposit_forfeit" : "rejected",
+          booking_id: bookingId,
+        },
+      });
+    } catch (e) {
+      console.error("email failed", e);
     }
-    toast({ title: `Status: ${STATUS_LABEL[status]}` });
+    toast({ title: "Storniert" });
     setActing(false);
     onChanged?.();
     load();
@@ -141,6 +192,9 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
   }
 
   const AccIcon = b.accommodation_type === "caravan" ? Caravan : Home;
+  const total = Number(b.total_price);
+  const deposit = Number(b.deposit_amount || 0);
+  const remaining = total - deposit;
 
   return (
     <div className="space-y-5">
@@ -245,15 +299,58 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
           ))}
         <div className="flex justify-between pt-2 mt-2 border-t border-border">
           <span className="font-body text-sm font-semibold">Gesamt</span>
-          <span className="font-display text-lg text-primary">€{Number(b.total_price).toFixed(2)}</span>
+          <span className="font-display text-lg text-primary">€{total.toFixed(2)}</span>
         </div>
-        <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground pt-1">
-          Zahlung: <span className="text-foreground">{b.payment_status}</span>
-          {b.payment_deadline && b.status === "approved" && b.payment_status === "unpaid" && (
-            <> · Frist bis <span className="text-foreground">{format(new Date(b.payment_deadline), "dd.MM.yyyy HH:mm", { locale: de })}</span></>
-          )}
-        </p>
       </div>
+
+      {/* Zahlungs-Status */}
+      {(b.status === "approved" || b.status === "paid") && (
+        <div className="border border-border bg-card p-4 space-y-2">
+          <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Banknote className="w-3.5 h-3.5" /> Zahlungs-Status
+          </p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Status</p>
+              <p className="font-body text-foreground">{PAY_LABEL[b.payment_status] ?? b.payment_status}</p>
+            </div>
+            <div>
+              <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Anzahlung</p>
+              <p className="font-body text-foreground">
+                €{deposit.toFixed(2)}
+                {b.deposit_paid_at && (
+                  <span className="text-emerald-700 ml-1">✓ {format(new Date(b.deposit_paid_at), "dd.MM.", { locale: de })}</span>
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Restzahlung</p>
+              <p className="font-body text-foreground">
+                €{remaining.toFixed(2)}
+                {b.final_paid_at && (
+                  <span className="text-emerald-700 ml-1">✓ {format(new Date(b.final_paid_at), "dd.MM.", { locale: de })}</span>
+                )}
+              </p>
+            </div>
+            {b.payment_deadline && b.payment_status === "deposit_pending" && (
+              <div>
+                <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Anzahlungs-Frist</p>
+                <p className="font-body text-foreground">
+                  {format(new Date(b.payment_deadline), "dd.MM.yyyy HH:mm", { locale: de })}
+                </p>
+              </div>
+            )}
+            {b.final_payment_due_date && (
+              <div>
+                <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Restzahlung bis</p>
+                <p className="font-body text-foreground">
+                  {format(new Date(b.final_payment_due_date), "dd.MM.yyyy", { locale: de })}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Kunden-Nachricht */}
       {b.message && (
@@ -293,14 +390,14 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
         {b.status === "pending" && (
           <>
             <button
-              onClick={approveAndSendPayment}
+              onClick={approveAndSendDeposit}
               disabled={acting}
               className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-50 transition-colors"
             >
-              <Check className="w-3.5 h-3.5" /> Freigeben & Zahlungslink senden
+              <Check className="w-3.5 h-3.5" /> Freigeben & Anzahlung anfordern
             </button>
             <button
-              onClick={() => updateStatus("rejected")}
+              onClick={reject}
               disabled={acting}
               className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 transition-colors"
             >
@@ -308,22 +405,31 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
             </button>
           </>
         )}
-        {b.status === "approved" && (
+        {b.status === "approved" && b.payment_status === "deposit_pending" && (
           <button
-            onClick={() => updateStatus("paid")}
+            onClick={markDepositPaid}
             disabled={acting}
-            className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-50 transition-colors"
           >
-            <Check className="w-3.5 h-3.5" /> Als bezahlt markieren
+            <Banknote className="w-3.5 h-3.5" /> Anzahlung erhalten
+          </button>
+        )}
+        {b.status === "approved" && b.payment_status === "deposit_paid" && (
+          <button
+            onClick={markFinalPaid}
+            disabled={acting}
+            className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-50 transition-colors"
+          >
+            <CreditCard className="w-3.5 h-3.5" /> Restzahlung erhalten
           </button>
         )}
         {(b.status === "approved" || b.status === "paid") && (
           <button
-            onClick={() => updateStatus("rejected")}
+            onClick={reject}
             disabled={acting}
             className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 transition-colors"
           >
-            <X className="w-3.5 h-3.5" /> Ablehnen
+            <X className="w-3.5 h-3.5" /> Stornieren
           </button>
         )}
         <button

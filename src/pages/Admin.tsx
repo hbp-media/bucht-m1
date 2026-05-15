@@ -16,11 +16,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Shield, ShieldCheck, Search, Users, Calendar, MapPin, Package, CalendarDays } from "lucide-react";
+import { Trash2, Shield, ShieldCheck, Search, Users, Calendar, MapPin, Package, CalendarDays, Settings as SettingsIcon } from "lucide-react";
 import AdminBookings from "@/components/admin/AdminBookings";
 import AdminSpots from "@/components/admin/AdminSpots";
 import AdminExtras from "@/components/admin/AdminExtras";
 import AdminCalendar from "@/components/admin/AdminCalendar";
+import AdminSettings from "@/components/admin/AdminSettings";
 
 interface Profile {
   id: string;
@@ -31,7 +32,7 @@ interface Profile {
   created_at: string;
 }
 
-type Tab = "bookings" | "calendar" | "users" | "spots" | "extras";
+type Tab = "bookings" | "calendar" | "users" | "spots" | "extras" | "settings";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -147,12 +148,14 @@ const Admin = () => {
               <TabBtn active={tab === "users"} onClick={() => setTab("users")} icon={<Users className="w-4 h-4" />}>Benutzer</TabBtn>
               <TabBtn active={tab === "spots"} onClick={() => setTab("spots")} icon={<MapPin className="w-4 h-4" />}>Plätze</TabBtn>
               <TabBtn active={tab === "extras"} onClick={() => setTab("extras")} icon={<Package className="w-4 h-4" />}>Extras</TabBtn>
+              <TabBtn active={tab === "settings"} onClick={() => setTab("settings")} icon={<SettingsIcon className="w-4 h-4" />}>Zahlung</TabBtn>
             </div>
 
             {tab === "bookings" && <AdminBookings />}
             {tab === "calendar" && <AdminCalendar />}
             {tab === "spots" && <AdminSpots />}
             {tab === "extras" && <AdminExtras />}
+            {tab === "settings" && <AdminSettings />}
 
             {tab === "users" && (
               <div>

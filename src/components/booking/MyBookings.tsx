@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Calendar, Clock, MapPin, X, CreditCard } from "lucide-react";
+import { Calendar, Clock, MapPin, X, Banknote, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { initializePaddle, getPaddleEnvironment } from "@/lib/paddle";
 
 interface Booking {
   id: string;
@@ -15,24 +13,38 @@ interface Booking {
   end_date: string;
   persons: number;
   total_price: number;
+  deposit_amount: number;
+  deposit_paid_at: string | null;
+  final_payment_due_date: string | null;
+  final_paid_at: string | null;
   status: string;
   payment_status: string;
   payment_deadline: string | null;
   email: string;
+  last_name: string;
   created_at: string;
   spot_id: string;
   fishing_spots: { name: string } | null;
 }
 
+interface PaySettings {
+  bank_holder: string;
+  iban: string;
+  bic: string;
+  deposit_deadline_hours: number;
+}
+
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   pending: { label: "Anfrage prüfen", cls: "bg-amber-100 text-amber-800 border-amber-200" },
-  approved: { label: "Freigegeben – bitte zahlen", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  rejected: { label: "Abgelehnt", cls: "bg-red-100 text-red-800 border-red-200" },
+  approved: { label: "Anzahlung offen", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  rejected: { label: "Storniert", cls: "bg-red-100 text-red-800 border-red-200" },
   paid: { label: "Bezahlt", cls: "bg-primary/10 text-primary border-primary/20" },
 };
 
 const PAY_LABEL: Record<string, string> = {
   unpaid: "Offen",
+  deposit_pending: "Anzahlung offen",
+  deposit_paid: "Anzahlung erhalten",
   paid: "Bezahlt",
   failed: "Fehlgeschlagen",
   expired: "Frist abgelaufen",
@@ -49,72 +61,73 @@ const useCountdown = (deadlineIso: string | null) => {
   if (!deadlineIso) return null;
   const ms = new Date(deadlineIso).getTime() - Date.now();
   if (ms <= 0) return "abgelaufen";
-  const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? `${h}h ${m}min` : `${m}min`;
 };
 
-const PayBlock = ({ booking, onPaid }: { booking: Booking; onPaid: () => void }) => {
-  const { toast } = useToast();
-  const [busy, setBusy] = useState(false);
-  const remaining = useCountdown(booking.payment_deadline);
-  const expired = remaining === "abgelaufen";
-
-  const openCheckout = async () => {
-    setBusy(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-payment-checkout", {
-        body: { environment: getPaddleEnvironment(), bookingId: booking.id },
-      });
-      if (error || !data?.transactionId) {
-        throw new Error(error?.message || "Zahlung konnte nicht gestartet werden");
-      }
-      await initializePaddle();
-      window.Paddle.Checkout.open({
-        transactionId: data.transactionId,
-        customer: { email: booking.email },
-        settings: {
-          displayMode: "overlay",
-          theme: "light",
-          locale: "de",
-          successUrl: `${window.location.origin}/account?checkout=success`,
-          allowLogout: false,
-        },
-        eventCallback: (ev: any) => {
-          if (ev?.name === "checkout.completed") {
-            toast({ title: "Zahlung erfolgreich", description: "Deine Buchung ist gesichert." });
-            setTimeout(onPaid, 1500);
-          }
-          if (ev?.name === "checkout.closed") {
-            setBusy(false);
-            onPaid();
-          }
-        },
-      });
-    } catch (e: any) {
-      toast({ title: "Fehler", description: e?.message ?? "Bitte erneut versuchen.", variant: "destructive" });
-      setBusy(false);
-    }
+const CopyField = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
-
   return (
-    <div className="mt-4 p-4 border border-primary/30 bg-primary/5 flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p className="font-body text-[11px] tracking-[0.2em] uppercase text-primary mb-1">
-          Zahlung erforderlich
-        </p>
-        <p className="font-body text-sm text-foreground">
-          Verbleibende Zeit: <strong>{remaining ?? "—"}</strong>
-        </p>
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-border/50 last:border-0">
+      <div className="min-w-0">
+        <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">{label}</p>
+        <p className={`text-sm text-foreground truncate ${mono ? "font-mono" : "font-body"}`}>{value || "—"}</p>
       </div>
       <button
-        onClick={openCheckout}
-        disabled={busy || expired}
-        className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light disabled:opacity-50 transition-colors"
+        onClick={copy}
+        className="flex-shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+        title="Kopieren"
       >
-        <CreditCard className="w-3.5 h-3.5" />
-        {busy ? "Wird geöffnet..." : expired ? "Frist abgelaufen" : `Jetzt bezahlen · €${Number(booking.total_price).toFixed(2)}`}
+        {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
       </button>
+    </div>
+  );
+};
+
+const PayBlock = ({ booking, settings, mode }: { booking: Booking; settings: PaySettings | null; mode: "deposit" | "final" }) => {
+  const remaining = useCountdown(mode === "deposit" ? booking.payment_deadline : null);
+  const expired = remaining === "abgelaufen";
+  const amount = mode === "deposit"
+    ? Number(booking.deposit_amount || 0)
+    : Number(booking.total_price) - Number(booking.deposit_amount || 0);
+  const reference = `Bucht M1 / ${booking.last_name} / ${booking.id.slice(0, 8)}`;
+  const title = mode === "deposit" ? "Anzahlung offen" : "Restzahlung fällig";
+
+  return (
+    <div className="mt-4 p-4 md:p-5 border border-primary/30 bg-primary/5">
+      <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+        <div className="flex items-center gap-2">
+          <Banknote className="w-4 h-4 text-primary" />
+          <p className="font-body text-[11px] tracking-[0.2em] uppercase text-primary">{title}</p>
+        </div>
+        {mode === "deposit" && booking.payment_deadline && (
+          <p className="font-body text-xs text-foreground">
+            Frist: <strong className={expired ? "text-destructive" : ""}>{remaining ?? "—"}</strong>
+          </p>
+        )}
+        {mode === "final" && booking.final_payment_due_date && (
+          <p className="font-body text-xs text-foreground">
+            Bis: <strong>{format(new Date(booking.final_payment_due_date), "dd.MM.yyyy", { locale: de })}</strong>
+          </p>
+        )}
+      </div>
+      <div className="bg-background border border-border p-3 md:p-4">
+        <CopyField label="Empfänger" value={settings?.bank_holder || "wird noch eingerichtet"} />
+        <CopyField label="IBAN" value={settings?.iban || ""} mono />
+        <CopyField label="BIC" value={settings?.bic || ""} mono />
+        <CopyField label="Betrag" value={`€${amount.toFixed(2)}`} />
+        <CopyField label="Verwendungszweck" value={reference} mono />
+      </div>
+      <p className="font-body text-[11px] text-muted-foreground mt-3 leading-relaxed">
+        Bitte den Verwendungszweck genau so angeben — sonst können wir die Zahlung nicht zuordnen.
+        Sobald der Betrag bei uns eingeht, bestätigen wir manuell und du erhältst eine E-Mail.
+      </p>
     </div>
   );
 };
@@ -123,70 +136,28 @@ const MyBookings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [settings, setSettings] = useState<PaySettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [params, setParams] = useSearchParams();
-  const payIdParam = params.get("pay");
-  const checkoutSuccess = params.get("checkout") === "success";
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
-      .from("bookings")
-      .select("*, fishing_spots(name)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setBookings((data as Booking[]) || []);
+    const [bRes, sRes] = await Promise.all([
+      supabase
+        .from("bookings")
+        .select("*, fishing_spots(name)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase.from("payment_settings").select("bank_holder,iban,bic,deposit_deadline_hours").limit(1).maybeSingle(),
+    ]);
+    setBookings((bRes.data as Booking[]) || []);
+    setSettings((sRes.data as PaySettings) || null);
     setLoading(false);
   };
 
   useEffect(() => {
     load();
   }, [user]);
-
-  // ?checkout=success → toast + clear param
-  useEffect(() => {
-    if (checkoutSuccess) {
-      toast({ title: "Zahlung empfangen", description: "Deine Buchung ist verbindlich gesichert." });
-      const next = new URLSearchParams(params);
-      next.delete("checkout");
-      setParams(next, { replace: true });
-      setTimeout(load, 1200);
-    }
-  }, [checkoutSuccess]);
-
-  // ?pay={id} → automatisch Checkout öffnen für die passende Buchung
-  const targetPay = useMemo(
-    () => bookings.find((b) => b.id === payIdParam && b.status === "approved" && b.payment_status === "unpaid"),
-    [bookings, payIdParam],
-  );
-  useEffect(() => {
-    if (!targetPay) return;
-    const next = new URLSearchParams(params);
-    next.delete("pay");
-    setParams(next, { replace: true });
-    // Trigger über Custom Event – PayBlock erkennt es nicht, daher öffnen wir hier:
-    (async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("create-payment-checkout", {
-          body: { environment: getPaddleEnvironment(), bookingId: targetPay.id },
-        });
-        if (error || !data?.transactionId) throw new Error(error?.message || "Fehler");
-        await initializePaddle();
-        window.Paddle.Checkout.open({
-          transactionId: data.transactionId,
-          customer: { email: targetPay.email },
-          settings: {
-            displayMode: "overlay", theme: "light", locale: "de",
-            successUrl: `${window.location.origin}/account?checkout=success`,
-            allowLogout: false,
-          },
-        });
-      } catch (e: any) {
-        toast({ title: "Fehler", description: e?.message ?? "", variant: "destructive" });
-      }
-    })();
-  }, [targetPay?.id]);
 
   const handleCancel = async (id: string) => {
     if (!confirm("Diese Anfrage wirklich zurückziehen?")) return;
@@ -222,8 +193,10 @@ const MyBookings = () => {
       {bookings.map((b, i) => {
         const status = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
         const canCancel = b.status === "pending";
-        const showPay =
-          b.status === "approved" && b.payment_status === "unpaid" && b.payment_deadline;
+        const showDeposit =
+          b.status === "approved" && b.payment_status === "deposit_pending";
+        const showFinal =
+          b.payment_status === "deposit_paid" && b.status !== "rejected";
         return (
           <motion.div
             key={b.id}
@@ -244,7 +217,7 @@ const MyBookings = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4 text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-2 text-sm">
               <div>
                 <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Anreise</p>
                 <p className="font-body text-foreground">{format(new Date(b.start_date), "dd. MMM yyyy", { locale: de })}</p>
@@ -258,15 +231,16 @@ const MyBookings = () => {
                 <p className="font-body text-foreground">{b.persons}</p>
               </div>
               <div>
-                <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Preis</p>
+                <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Gesamt</p>
                 <p className="font-display text-primary text-base">€{Number(b.total_price).toFixed(2)}</p>
               </div>
             </div>
 
-            {showPay && <PayBlock booking={b} onPaid={load} />}
+            {showDeposit && <PayBlock booking={b} settings={settings} mode="deposit" />}
+            {showFinal && <PayBlock booking={b} settings={settings} mode="final" />}
 
-            <div className="flex items-center justify-between gap-4 pt-4 mt-2 border-t border-border">
-              <div className="flex items-center gap-3 text-muted-foreground">
+            <div className="flex items-center justify-between gap-4 pt-4 mt-4 border-t border-border">
+              <div className="flex items-center gap-3 text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3 h-3" />
                   <span className="font-body text-[11px]">
@@ -274,7 +248,7 @@ const MyBookings = () => {
                   </span>
                 </div>
                 <span className="font-body text-[11px]">
-                  Zahlung: {PAY_LABEL[b.payment_status] ?? b.payment_status}
+                  Status: {PAY_LABEL[b.payment_status] ?? b.payment_status}
                 </span>
               </div>
               {canCancel && (
