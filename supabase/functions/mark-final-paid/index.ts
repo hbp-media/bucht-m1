@@ -1,14 +1,10 @@
-// Admin gibt Buchung frei → berechnet Anzahlung (X% vom Total),
-// setzt Frist (Stunden aus payment_settings), Restzahlungs-Fälligkeit
-// und sendet Anzahlungs-Mail mit Bankdaten.
+// Admin markiert: Restzahlung erhalten → payment_status='paid', status='paid'
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 
-const BodySchema = z.object({
-  bookingId: z.string().uuid(),
-});
+const BodySchema = z.object({ bookingId: z.string().uuid() });
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -17,7 +13,6 @@ Deno.serve(async (req) => {
       status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -38,7 +33,6 @@ Deno.serve(async (req) => {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: roleRow } = await admin
       .from('user_roles')
@@ -60,86 +54,54 @@ Deno.serve(async (req) => {
     }
     const { bookingId } = parsed.data;
 
-    // Settings + Buchung holen
-    const [{ data: settings }, { data: bk }] = await Promise.all([
-      admin.from('payment_settings').select('*').limit(1).maybeSingle(),
-      admin.from('bookings').select('*').eq('id', bookingId).maybeSingle(),
-    ]);
-
-    if (!bk) {
-      return new Response(JSON.stringify({ error: 'Buchung nicht gefunden' }), {
-        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const depositPercent = settings?.deposit_percent ?? 50;
-    const deadlineHours = settings?.deposit_deadline_hours ?? 24;
-    const fullPaymentDays = settings?.full_payment_days_before ?? 14;
-
-    const totalPrice = Number(bk.total_price ?? 0);
-    const depositAmount = Math.round((totalPrice * depositPercent) / 100 * 100) / 100;
-    const deadline = new Date(Date.now() + deadlineHours * 3600_000).toISOString();
-
-    // Restzahlungs-Fälligkeit: start_date - fullPaymentDays
-    const startDate = new Date(bk.start_date);
-    startDate.setUTCDate(startDate.getUTCDate() - fullPaymentDays);
-    const finalDueDate = startDate.toISOString().slice(0, 10);
-
     const { error: updErr } = await admin
       .from('bookings')
       .update({
-        status: 'approved',
-        payment_status: 'deposit_pending',
-        deposit_amount: depositAmount,
-        payment_deadline: deadline,
-        final_payment_due_date: finalDueDate,
+        status: 'paid',
+        payment_status: 'paid',
+        final_paid_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', bookingId);
-
     if (updErr) {
       return new Response(JSON.stringify({ error: updErr.message }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Mail mit Bankdaten + Frist
     try {
       const url = `${supabaseUrl}/functions/v1/send-booking-email`;
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` };
       await fetch(url, {
         method: 'POST', headers,
-        body: JSON.stringify({ type: 'deposit_request', booking_id: bookingId }),
+        body: JSON.stringify({ type: 'final_payment_received', booking_id: bookingId }),
       });
     } catch (e) {
       console.error('mail dispatch failed', e);
     }
-
-    // In-App-Notification für Kunde
     try {
-      if (bk.user_id) {
+      const { data: bk } = await admin
+        .from('bookings')
+        .select('user_id')
+        .eq('id', bookingId)
+        .maybeSingle();
+      if (bk?.user_id) {
         await admin.from('notifications').insert({
           user_id: bk.user_id,
-          type: 'booking_approved',
-          title: 'Buchung freigegeben – Anzahlung fällig',
-          message: `Bitte Anzahlung von €${depositAmount.toFixed(2)} innerhalb von ${deadlineHours}h überweisen.`,
-          link: `/account?pay=${bookingId}`,
+          type: 'paid',
+          title: 'Buchung vollständig bezahlt',
+          message: 'Wir freuen uns auf dich!',
+          link: '/account',
           booking_id: bookingId,
         });
       }
     } catch (e) {
-      console.error('customer notification insert failed', e);
+      console.error('notification insert failed', e);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        deposit_amount: depositAmount,
-        payment_deadline: deadline,
-        final_payment_due_date: finalDueDate,
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unbekannter Fehler';
     return new Response(JSON.stringify({ error: msg }), {
