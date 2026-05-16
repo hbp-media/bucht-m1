@@ -30,7 +30,7 @@ interface AdminBooking {
 
 const STATUS_FILTERS = [
   { key: "pending", label: "Anfragen" },
-  { key: "approved", label: "Bestätigt" },
+  { key: "approved", label: "Bestätigt (unbezahlt)" },
   { key: "paid", label: "Bezahlt" },
   { key: "rejected", label: "Abgelehnt" },
   { key: "all", label: "Alle" },
@@ -45,7 +45,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Vorreserviert",
-  approved: "Bestätigt",
+  approved: "Bestätigt (unbezahlt)",
   rejected: "Abgelehnt",
   paid: "Bezahlt",
 };

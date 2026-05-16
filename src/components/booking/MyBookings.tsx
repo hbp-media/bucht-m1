@@ -32,6 +32,7 @@ interface PaySettings {
   iban: string;
   bic: string;
   deposit_deadline_hours: number;
+  cancellation_days_before: number;
 }
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
@@ -148,7 +149,7 @@ const MyBookings = () => {
         .select("*, fishing_spots(name)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
-      supabase.from("payment_settings").select("bank_holder,iban,bic,deposit_deadline_hours").limit(1).maybeSingle(),
+      supabase.from("payment_settings").select("bank_holder,iban,bic,deposit_deadline_hours,cancellation_days_before").limit(1).maybeSingle(),
     ]);
     setBookings((bRes.data as Booking[]) || []);
     setSettings((sRes.data as PaySettings) || null);
@@ -159,18 +160,33 @@ const MyBookings = () => {
     load();
   }, [user]);
 
-  const handleCancel = async (id: string) => {
-    if (!confirm("Diese Anfrage wirklich zurückziehen?")) return;
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "rejected" })
-      .eq("id", id);
-    if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+  const handleCancel = async (b: Booking) => {
+    const isPending = b.status === "pending";
+    const msg = isPending
+      ? "Diese Anfrage wirklich zurückziehen?"
+      : `Wirklich stornieren? Kostenlose Stornierung nur bis ${settings?.cancellation_days_before ?? 14} Tage vor Anreise.`;
+    if (!confirm(msg)) return;
+
+    if (isPending) {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "rejected" })
+        .eq("id", b.id);
+      if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+        return;
+      }
     } else {
-      toast({ title: "Zurückgezogen", description: "Deine Anfrage wurde entfernt." });
-      load();
+      const { error } = await supabase.functions.invoke("cancel-booking-user", {
+        body: { bookingId: b.id },
+      });
+      if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+        return;
+      }
     }
+    toast({ title: "Storniert", description: "Deine Buchung wurde storniert." });
+    load();
   };
 
   if (loading) {
@@ -192,7 +208,14 @@ const MyBookings = () => {
     <div className="space-y-4">
       {bookings.map((b, i) => {
         const status = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
-        const canCancel = b.status === "pending";
+        const cancelDays = settings?.cancellation_days_before ?? 14;
+        const startMs = new Date(b.start_date).getTime();
+        const withinFreeWindow = startMs - Date.now() > cancelDays * 86400_000;
+        const canCancel =
+          b.status === "pending" ||
+          (["deposit_paid", "paid"].includes(b.payment_status) &&
+            b.status !== "rejected" &&
+            withinFreeWindow);
         const showDeposit =
           b.status === "approved" && b.payment_status === "deposit_pending";
         const showFinal =
@@ -253,10 +276,10 @@ const MyBookings = () => {
               </div>
               {canCancel && (
                 <button
-                  onClick={() => handleCancel(b.id)}
+                  onClick={() => handleCancel(b)}
                   className="flex items-center gap-1.5 font-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-destructive transition-colors"
                 >
-                  <X className="w-3 h-3" /> Zurückziehen
+                  <X className="w-3 h-3" /> {b.status === "pending" ? "Zurückziehen" : "Stornieren"}
                 </button>
               )}
             </div>
