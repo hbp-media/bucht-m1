@@ -19,6 +19,7 @@ import {
   Trash2,
   Banknote,
   CreditCard,
+  History,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
