@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
       console.error('admin notify failed', e);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, late_cancel: lateCancel }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
