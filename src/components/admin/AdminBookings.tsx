@@ -124,9 +124,15 @@ const AdminBookings = () => {
                     <h4 className="font-display text-lg text-foreground">
                       {b.first_name} {b.last_name}
                     </h4>
-                    <span className={`px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border ${STATUS_BADGE[b.status]}`}>
-                      {STATUS_LABEL[b.status]}
-                    </span>
+                    {b.cancelled_at ? (
+                      <span className="px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border bg-red-100 text-red-800 border-red-200">
+                        Storniert
+                      </span>
+                    ) : (
+                      <span className={`px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border ${STATUS_BADGE[b.status]}`}>
+                        {STATUS_LABEL[b.status]}
+                      </span>
+                    )}
                   </div>
                   <p className="font-body text-xs text-muted-foreground mb-2">
                     {b.fishing_spots?.name || "Platz"} · {format(new Date(b.start_date), "dd.MM.", { locale: de })}–{format(new Date(b.end_date), "dd.MM.yyyy", { locale: de })} · {b.persons + (b.companions || 0)} Personen
