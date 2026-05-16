@@ -32,6 +32,7 @@ interface PaySettings {
   iban: string;
   bic: string;
   deposit_deadline_hours: number;
+  cancellation_days_before: number;
 }
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
