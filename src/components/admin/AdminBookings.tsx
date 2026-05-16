@@ -33,6 +33,7 @@ const STATUS_FILTERS = [
   { key: "pending", label: "Anfragen" },
   { key: "approved", label: "Bestätigt (unbezahlt)" },
   { key: "paid", label: "Bezahlt" },
+  { key: "cancelled", label: "Storniert" },
   { key: "rejected", label: "Abgelehnt" },
   { key: "all", label: "Alle" },
 ];
