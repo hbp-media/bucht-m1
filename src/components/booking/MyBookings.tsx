@@ -160,18 +160,33 @@ const MyBookings = () => {
     load();
   }, [user]);
 
-  const handleCancel = async (id: string) => {
-    if (!confirm("Diese Anfrage wirklich zurückziehen?")) return;
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "rejected" })
-      .eq("id", id);
-    if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+  const handleCancel = async (b: Booking) => {
+    const isPending = b.status === "pending";
+    const msg = isPending
+      ? "Diese Anfrage wirklich zurückziehen?"
+      : `Wirklich stornieren? Kostenlose Stornierung nur bis ${settings?.cancellation_days_before ?? 14} Tage vor Anreise.`;
+    if (!confirm(msg)) return;
+
+    if (isPending) {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "rejected" })
+        .eq("id", b.id);
+      if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+        return;
+      }
     } else {
-      toast({ title: "Zurückgezogen", description: "Deine Anfrage wurde entfernt." });
-      load();
+      const { error } = await supabase.functions.invoke("cancel-booking-user", {
+        body: { bookingId: b.id },
+      });
+      if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+        return;
+      }
     }
+    toast({ title: "Storniert", description: "Deine Buchung wurde storniert." });
+    load();
   };
 
   if (loading) {
