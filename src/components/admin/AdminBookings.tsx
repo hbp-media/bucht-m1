@@ -54,12 +54,39 @@ const STATUS_LABEL: Record<string, string> = {
   paid: "Bezahlt",
 };
 
-const AdminBookings = () => {
+interface Props {
+  onCountsChange?: (counts: { pending: number; approved: number }) => void;
+}
+
+const AdminBookings = ({ onCountsChange }: Props = {}) => {
   const { toast } = useToast();
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [filter, setFilter] = useState<string>("pending");
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  const loadCounts = async () => {
+    const statuses = ["pending", "approved", "paid", "rejected"] as const;
+    const results = await Promise.all(
+      statuses.map((s) =>
+        supabase
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("status", s as any)
+          .is("cancelled_at", null),
+      ),
+    );
+    const cancelledRes = await supabase
+      .from("bookings")
+      .select("id", { count: "exact", head: true })
+      .not("cancelled_at", "is", null);
+    const next: Record<string, number> = {};
+    statuses.forEach((s, i) => (next[s] = results[i].count || 0));
+    next.cancelled = cancelledRes.count || 0;
+    setCounts(next);
+    onCountsChange?.({ pending: next.pending || 0, approved: next.approved || 0 });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -85,25 +112,41 @@ const AdminBookings = () => {
 
   useEffect(() => {
     load();
+    loadCounts();
   }, [filter]);
 
   return (
     <div>
       {/* Filter */}
       <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
-        {STATUS_FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 font-body text-[11px] tracking-[0.2em] uppercase border-b-2 transition-colors -mb-px ${
-              filter === f.key
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+        {STATUS_FILTERS.map((f) => {
+          const count = counts[f.key] || 0;
+          const isAction = f.key === "pending" || f.key === "approved";
+          return (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-4 py-2 font-body text-[11px] tracking-[0.2em] uppercase border-b-2 transition-colors -mb-px inline-flex items-center gap-2 ${
+                filter === f.key
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {f.label}
+              {count > 0 && f.key !== "all" && (
+                <span
+                  className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-semibold tracking-normal ${
+                    isAction
+                      ? "bg-red-600 text-white"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
