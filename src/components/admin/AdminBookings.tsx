@@ -25,6 +25,7 @@ interface AdminBooking {
   email: string;
   phone: string;
   created_at: string;
+  cancelled_at: string | null;
   fishing_spots: { name: string } | null;
 }
 
