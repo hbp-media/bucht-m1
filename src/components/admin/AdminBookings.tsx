@@ -45,7 +45,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Vorreserviert",
-  approved: "Bestätigt",
+  approved: "Bestätigt (unbezahlt)",
   rejected: "Abgelehnt",
   paid: "Bezahlt",
 };
