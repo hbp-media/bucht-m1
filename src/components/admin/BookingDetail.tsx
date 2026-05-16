@@ -97,7 +97,7 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
     });
     setActing(false);
     onChanged?.();
-    load();
+    onClose();
   };
 
   const markDepositPaid = async () => {
