@@ -451,7 +451,7 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
             </button>
           </>
         )}
-        {b.status === "approved" && b.payment_status === "deposit_pending" && (
+        {b.status === "approved" && ["unpaid", "deposit_pending"].includes(b.payment_status) && (
           <button
             onClick={markDepositPaid}
             disabled={acting}
