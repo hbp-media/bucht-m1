@@ -65,7 +65,7 @@ const AdminBookings = () => {
     setLoading(true);
     let q = supabase
       .from("bookings")
-      .select("id, start_date, end_date, persons, companions, total_price, status, first_name, last_name, email, phone, created_at, cancelled_at, fishing_spots(name)")
+      .select("id, start_date, end_date, persons, companions, total_price, status, payment_status, deposit_amount, first_name, last_name, email, phone, created_at, cancelled_at, fishing_spots(name)")
       .order("created_at", { ascending: false });
     if (filter === "cancelled") {
       q = q.not("cancelled_at", "is", null);
