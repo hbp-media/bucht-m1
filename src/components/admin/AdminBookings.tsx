@@ -112,6 +112,7 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
 
   useEffect(() => {
     load();
+    loadCounts();
   }, [filter]);
 
   return (
