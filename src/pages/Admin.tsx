@@ -257,11 +257,13 @@ const TabBtn = ({
   onClick,
   children,
   icon,
+  badge,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
   icon: React.ReactNode;
+  badge?: number;
 }) => (
   <button
     onClick={onClick}
@@ -273,6 +275,11 @@ const TabBtn = ({
   >
     {icon}
     {children}
+    {badge && badge > 0 ? (
+      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-semibold tracking-normal bg-red-600 text-white">
+        {badge}
+      </span>
+    ) : null}
   </button>
 );
 
