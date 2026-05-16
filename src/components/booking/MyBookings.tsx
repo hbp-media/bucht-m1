@@ -276,10 +276,10 @@ const MyBookings = () => {
               </div>
               {canCancel && (
                 <button
-                  onClick={() => handleCancel(b.id)}
+                  onClick={() => handleCancel(b)}
                   className="flex items-center gap-1.5 font-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-destructive transition-colors"
                 >
-                  <X className="w-3 h-3" /> Zurückziehen
+                  <X className="w-3 h-3" /> {b.status === "pending" ? "Zurückziehen" : "Stornieren"}
                 </button>
               )}
             </div>
