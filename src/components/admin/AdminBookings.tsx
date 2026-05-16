@@ -127,9 +127,27 @@ const AdminBookings = () => {
                       {b.first_name} {b.last_name}
                     </h4>
                     {b.cancelled_at ? (
-                      <span className="px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border bg-red-100 text-red-800 border-red-200">
-                        Storniert
-                      </span>
+                      <>
+                        <span className="px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border bg-red-100 text-red-800 border-red-200">
+                          Storniert
+                        </span>
+                        {["deposit_paid", "paid"].includes(b.payment_status) ? (
+                          <span
+                            className="px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border bg-red-50 text-red-700 border-red-200"
+                            title="Spät storniert – Anzahlung verfällt zugunsten der Bucht"
+                          >
+                            Anzahlung verfällt · €{Number(b.deposit_amount || 0).toFixed(2)}
+                          </span>
+                        ) : b.payment_status === "refunded" ? (
+                          <span className="px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border bg-emerald-50 text-emerald-700 border-emerald-200">
+                            Anzahlung erstattet
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border bg-muted text-muted-foreground border-border">
+                            Keine Zahlung
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <span className={`px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border ${STATUS_BADGE[b.status]}`}>
                         {STATUS_LABEL[b.status]}
