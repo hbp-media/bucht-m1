@@ -122,7 +122,7 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
       <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
         {STATUS_FILTERS.map((f) => {
           const count = counts[f.key] || 0;
-          const isAction = f.key === "pending" || f.key === "approved";
+          const isAction = f.key === "pending" || f.key === "approved" || f.key === "cancelled";
           return (
             <button
               key={f.key}
@@ -134,14 +134,8 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
               }`}
             >
               {f.label}
-              {count > 0 && f.key !== "all" && (
-                <span
-                  className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-semibold tracking-normal ${
-                    isAction
-                      ? "bg-red-600 text-white"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
+              {isAction && count > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-semibold tracking-normal bg-red-600 text-white">
                   {count}
                 </span>
               )}
