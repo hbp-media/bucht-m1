@@ -86,7 +86,7 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
     statuses.forEach((s, i) => (next[s] = results[i].count || 0));
     next.cancelled = cancelledRes.count || 0;
     setCounts(next);
-    onCountsChange?.({ pending: next.pending || 0, approved: next.approved || 0 });
+    onCountsChange?.({ pending: next.pending || 0, approved: (next.approved || 0) + (next.cancelled || 0) });
   };
 
   const load = async () => {
