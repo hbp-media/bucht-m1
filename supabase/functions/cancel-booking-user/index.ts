@@ -68,23 +68,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (isPaidStage) {
-      const start = new Date(bk.start_date).getTime();
-      const cutoff = start - cancelDays * 86400_000;
-      if (Date.now() > cutoff) {
-        return new Response(
-          JSON.stringify({ error: `Kostenlose Stornierung nur bis ${cancelDays} Tage vor Anreise möglich.` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
-      }
-    }
+    // Bestimme ob innerhalb der freien Storno-Frist (>= cancelDays Tage vor Anreise)
+    const start = new Date(bk.start_date).getTime();
+    const cutoff = start - cancelDays * 86400_000;
+    const lateCancel = isPaidStage && Date.now() > cutoff; // Anzahlung verfällt
 
     const updates: Record<string, unknown> = {
       status: 'rejected',
       cancelled_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    if (isPaidStage) updates.payment_status = 'refunded';
+    if (isPaidStage && !lateCancel) updates.payment_status = 'refunded';
+    // bei lateCancel: payment_status bleibt deposit_paid/paid → Anzahlung verfällt
 
     const { error: updErr } = await admin.from('bookings').update(updates).eq('id', bookingId);
     if (updErr) {
