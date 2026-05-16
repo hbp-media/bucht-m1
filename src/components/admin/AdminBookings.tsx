@@ -80,7 +80,8 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
     const cancelledRes = await supabase
       .from("bookings")
       .select("id", { count: "exact", head: true })
-      .not("cancelled_at", "is", null);
+      .not("cancelled_at", "is", null)
+      .in("payment_status", ["deposit_paid", "paid"] as any);
     const next: Record<string, number> = {};
     statuses.forEach((s, i) => (next[s] = results[i].count || 0));
     next.cancelled = cancelledRes.count || 0;
