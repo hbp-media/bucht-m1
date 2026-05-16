@@ -47,6 +47,7 @@ const Admin = () => {
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingAdminId, setTogglingAdminId] = useState<string | null>(null);
+  const [bookingActionCount, setBookingActionCount] = useState(0);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
