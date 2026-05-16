@@ -144,7 +144,7 @@ const Admin = () => {
 
             {/* Tabs */}
             <div className="flex flex-wrap justify-center gap-1 mb-10 border-b border-border">
-              <TabBtn active={tab === "bookings"} onClick={() => setTab("bookings")} icon={<Calendar className="w-4 h-4" />}>Buchungen</TabBtn>
+              <TabBtn active={tab === "bookings"} onClick={() => setTab("bookings")} icon={<Calendar className="w-4 h-4" />} badge={bookingActionCount}>Buchungen</TabBtn>
               <TabBtn active={tab === "calendar"} onClick={() => setTab("calendar")} icon={<CalendarDays className="w-4 h-4" />}>Kalender</TabBtn>
               <TabBtn active={tab === "users"} onClick={() => setTab("users")} icon={<Users className="w-4 h-4" />}>Benutzer</TabBtn>
               <TabBtn active={tab === "spots"} onClick={() => setTab("spots")} icon={<MapPin className="w-4 h-4" />}>Plätze</TabBtn>
@@ -152,7 +152,7 @@ const Admin = () => {
               <TabBtn active={tab === "settings"} onClick={() => setTab("settings")} icon={<SettingsIcon className="w-4 h-4" />}>Zahlung</TabBtn>
             </div>
 
-            {tab === "bookings" && <AdminBookings />}
+            {tab === "bookings" && <AdminBookings onCountsChange={(c) => setBookingActionCount(c.pending + c.approved)} />}
             {tab === "calendar" && <AdminCalendar />}
             {tab === "spots" && <AdminSpots />}
             {tab === "extras" && <AdminExtras />}
