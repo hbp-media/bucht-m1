@@ -20,6 +20,8 @@ interface AdminBooking {
   companions: number;
   total_price: number;
   status: string;
+  payment_status: string;
+  deposit_amount: number;
   first_name: string;
   last_name: string;
   email: string;
