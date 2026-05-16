@@ -28,7 +28,7 @@ import {
   type ExtraUnit,
 } from "@/lib/pricing";
 import { buildWeekendRange, nextFriday } from "@/lib/weekend";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+
 
 const STEPS = [
   "Platz",
@@ -320,7 +320,6 @@ const BookingSystem = () => {
 
   return (
     <main className="bg-background min-h-screen flex flex-col">
-      <PaymentTestModeBanner />
       <Navbar />
 
       <section className="flex-1 pt-32 pb-20 px-6 md:px-12">
