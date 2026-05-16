@@ -103,11 +103,17 @@ Deno.serve(async (req) => {
       const { data: admins } = await admin
         .from('user_roles').select('user_id').eq('role', 'admin');
       if (admins?.length) {
+        const title = lateCancel
+          ? 'Späte Stornierung – Anzahlung verfällt'
+          : 'Buchung vom Kunden storniert';
+        const message = lateCancel
+          ? `${bk.first_name} ${bk.last_name} hat innerhalb der ${cancelDays}-Tage-Frist storniert. Anzahlung €${Number(bk.deposit_amount || 0).toFixed(2)} verfällt.`
+          : `${bk.first_name} ${bk.last_name} hat die Buchung storniert.`;
         const rows = admins.map((a) => ({
           user_id: a.user_id,
-          type: 'booking_cancelled',
-          title: 'Buchung vom Kunden storniert',
-          message: `${bk.first_name} ${bk.last_name} hat die Buchung storniert.`,
+          type: lateCancel ? 'booking_late_cancel' : 'booking_cancelled',
+          title,
+          message,
           link: `/admin?booking=${bookingId}`,
           booking_id: bookingId,
         }));
