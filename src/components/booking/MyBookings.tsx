@@ -144,12 +144,157 @@ const PayBlock = ({ booking, settings, mode }: { booking: Booking; settings: Pay
   );
 };
 
+const buildTimeline = (b: Booking): { ts: string; label: string; tone: string }[] => {
+  const items: { ts: string; label: string; tone: string }[] = [];
+  items.push({ ts: b.created_at, label: "Anfrage gestellt", tone: "muted" });
+  if (b.status === "approved" || b.status === "paid" || b.deposit_paid_at || b.payment_status === "deposit_pending") {
+    // approximation: we don't have approved_at, fall back to updated_at when status moves past pending
+  }
+  if (b.payment_deadline && (b.status === "approved" || b.status === "paid" || b.payment_status === "deposit_pending" || b.payment_status === "deposit_paid" || b.payment_status === "paid")) {
+    items.push({ ts: b.payment_deadline, label: "Anzahlungs-Frist", tone: "muted" });
+  }
+  if (b.deposit_paid_at) {
+    items.push({ ts: b.deposit_paid_at, label: "Anzahlung bestätigt", tone: "ok" });
+  }
+  if (b.final_payment_due_date) {
+    items.push({ ts: b.final_payment_due_date, label: "Restzahlung fällig", tone: "muted" });
+  }
+  if (b.final_paid_at) {
+    items.push({ ts: b.final_paid_at, label: "Restzahlung bestätigt", tone: "ok" });
+  }
+  if (b.status === "rejected") {
+    items.push({ ts: b.created_at, label: "Storniert / Abgelehnt", tone: "bad" });
+  }
+  return items.sort((a, c) => new Date(a.ts).getTime() - new Date(c.ts).getTime());
+};
+
+const BookingDashboard = ({ booking, settings, onClose, onCancelRequest }: {
+  booking: Booking;
+  settings: PaySettings | null;
+  onClose: () => void;
+  onCancelRequest: (b: Booking) => void;
+}) => {
+  const cancelDays = settings?.cancellation_days_before ?? 14;
+  const startMs = new Date(booking.start_date).getTime();
+  const withinFreeWindow = startMs - Date.now() > cancelDays * 86400_000;
+  const canCancel =
+    booking.status === "pending" ||
+    (["deposit_paid", "paid"].includes(booking.payment_status) && booking.status !== "rejected");
+  const showDeposit = booking.status === "approved" && booking.payment_status === "deposit_pending";
+  const showFinal = booking.payment_status === "deposit_paid" && booking.status !== "rejected";
+  const timeline = buildTimeline(booking);
+  const deposit = Number(booking.deposit_amount || 0);
+  const total = Number(booking.total_price);
+  const remaining = total - deposit;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-3 pb-4 border-b border-border">
+        <div>
+          <h3 className="font-display text-2xl text-foreground">
+            {booking.fishing_spots?.name || "Platz"}
+          </h3>
+          <p className="font-body text-[11px] text-muted-foreground mt-1 font-mono">
+            ID: {booking.id.slice(0, 8).toUpperCase()}
+          </p>
+        </div>
+        <span className={`px-2.5 py-1 font-body text-[10px] tracking-[0.15em] uppercase border ${(STATUS_LABEL[booking.status] || STATUS_LABEL.pending).cls}`}>
+          {(STATUS_LABEL[booking.status] || STATUS_LABEL.pending).label}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div>
+          <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Anreise</p>
+          <p className="font-body text-foreground">{format(new Date(booking.start_date), "dd. MMM yyyy", { locale: de })}</p>
+        </div>
+        <div>
+          <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Abreise</p>
+          <p className="font-body text-foreground">{format(new Date(booking.end_date), "dd. MMM yyyy", { locale: de })}</p>
+        </div>
+        <div>
+          <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Personen</p>
+          <p className="font-body text-foreground">{booking.persons}</p>
+        </div>
+        <div>
+          <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Gesamt</p>
+          <p className="font-display text-primary text-base">€{total.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <div className="border border-border bg-muted/30 p-4 grid grid-cols-3 gap-3 text-sm">
+        <div>
+          <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Anzahlung</p>
+          <p className="font-body text-foreground">
+            €{deposit.toFixed(2)}{booking.deposit_paid_at && <span className="text-emerald-700 ml-1">✓</span>}
+          </p>
+        </div>
+        <div>
+          <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Restzahlung</p>
+          <p className="font-body text-foreground">
+            €{remaining.toFixed(2)}{booking.final_paid_at && <span className="text-emerald-700 ml-1">✓</span>}
+          </p>
+        </div>
+        <div>
+          <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Zahl-Status</p>
+          <p className="font-body text-foreground">{PAY_LABEL[booking.payment_status] ?? booking.payment_status}</p>
+        </div>
+      </div>
+
+      {showDeposit && <PayBlock booking={booking} settings={settings} mode="deposit" />}
+      {showFinal && <PayBlock booking={booking} settings={settings} mode="final" />}
+
+      <div>
+        <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-3 flex items-center gap-1.5">
+          <History className="w-3.5 h-3.5" /> Verlauf
+        </p>
+        <ol className="relative border-l border-border ml-2 space-y-3">
+          {timeline.map((t, idx) => (
+            <li key={idx} className="ml-4">
+              <span
+                className={`absolute -left-1.5 mt-1.5 w-3 h-3 rounded-full border-2 border-background ${
+                  t.tone === "ok" ? "bg-emerald-500" : t.tone === "bad" ? "bg-destructive" : "bg-muted-foreground/50"
+                }`}
+              />
+              <p className="font-body text-sm text-foreground">{t.label}</p>
+              <p className="font-body text-[11px] text-muted-foreground">
+                {format(new Date(t.ts), "dd.MM.yyyy HH:mm", { locale: de })} Uhr
+              </p>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {canCancel && (
+        <div className="pt-4 border-t border-border">
+          {!withinFreeWindow && booking.status !== "pending" && (
+            <div className="flex items-start gap-2 p-3 mb-3 bg-amber-50 border border-amber-200 text-amber-900">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p className="font-body text-xs">
+                Stornierung innerhalb der {cancelDays}-Tage-Frist – die Anzahlung von €{deposit.toFixed(2)} verfällt.
+              </p>
+            </div>
+          )}
+          <button
+            onClick={() => onCancelRequest(booking)}
+            className="flex items-center gap-1.5 px-4 py-2 font-body text-[11px] tracking-[0.15em] uppercase border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+          >
+            <X className="w-3.5 h-3.5" /> {booking.status === "pending" ? "Anfrage zurückziehen" : "Buchung stornieren"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const MyBookings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [settings, setSettings] = useState<PaySettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -171,32 +316,47 @@ const MyBookings = () => {
     load();
   }, [user]);
 
-  const handleCancel = async (b: Booking) => {
-    const isPending = b.status === "pending";
-    const msg = isPending
-      ? "Diese Anfrage wirklich zurückziehen?"
-      : `Wirklich stornieren? Kostenlose Stornierung nur bis ${settings?.cancellation_days_before ?? 14} Tage vor Anreise.`;
-    if (!confirm(msg)) return;
+  const openBooking = useMemo(
+    () => bookings.find((x) => x.id === openId) || null,
+    [bookings, openId]
+  );
 
-    if (isPending) {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "rejected" })
-        .eq("id", b.id);
+  const cancelMeta = useMemo(() => {
+    if (!cancelTarget) return null;
+    const cancelDays = settings?.cancellation_days_before ?? 14;
+    const startMs = new Date(cancelTarget.start_date).getTime();
+    const withinFreeWindow = startMs - Date.now() > cancelDays * 86400_000;
+    const isPending = cancelTarget.status === "pending";
+    return { cancelDays, withinFreeWindow, isPending };
+  }, [cancelTarget, settings]);
+
+  const performCancel = async () => {
+    if (!cancelTarget) return;
+    const b = cancelTarget;
+    setCancelTarget(null);
+    if (b.status === "pending") {
+      const { error } = await supabase.from("bookings").update({ status: "rejected" }).eq("id", b.id);
       if (error) {
         toast({ title: "Fehler", description: error.message, variant: "destructive" });
         return;
       }
+      toast({ title: "Zurückgezogen", description: "Deine Anfrage wurde entfernt." });
     } else {
-      const { error } = await supabase.functions.invoke("cancel-booking-user", {
+      const { data, error } = await supabase.functions.invoke("cancel-booking-user", {
         body: { bookingId: b.id },
       });
       if (error) {
         toast({ title: "Fehler", description: error.message, variant: "destructive" });
         return;
       }
+      toast({
+        title: "Storniert",
+        description: data?.late_cancel
+          ? "Späte Stornierung – Anzahlung verfällt. Admin wurde informiert."
+          : "Deine Buchung wurde storniert.",
+      });
     }
-    toast({ title: "Storniert", description: "Deine Buchung wurde storniert." });
+    setOpenId(null);
     load();
   };
 
@@ -216,88 +376,127 @@ const MyBookings = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {bookings.map((b, i) => {
-        const status = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
-        const cancelDays = settings?.cancellation_days_before ?? 14;
-        const startMs = new Date(b.start_date).getTime();
-        const withinFreeWindow = startMs - Date.now() > cancelDays * 86400_000;
-        const canCancel =
-          b.status === "pending" ||
-          (["deposit_paid", "paid"].includes(b.payment_status) &&
-            b.status !== "rejected" &&
-            withinFreeWindow);
-        const showDeposit =
-          b.status === "approved" && b.payment_status === "deposit_pending";
-        const showFinal =
-          b.payment_status === "deposit_paid" && b.status !== "rejected";
-        return (
-          <motion.div
-            key={b.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: i * 0.05 }}
-            className="border border-border bg-card p-5 md:p-6"
-          >
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-accent" />
-                <h4 className="font-display text-lg text-foreground">
-                  {b.fishing_spots?.name || "Platz"}
-                </h4>
-              </div>
-              <span className={`px-3 py-1 font-body text-[10px] tracking-[0.15em] uppercase border ${status.cls}`}>
-                {status.label}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-2 text-sm">
-              <div>
-                <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Anreise</p>
-                <p className="font-body text-foreground">{format(new Date(b.start_date), "dd. MMM yyyy", { locale: de })}</p>
-              </div>
-              <div>
-                <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Abreise</p>
-                <p className="font-body text-foreground">{format(new Date(b.end_date), "dd. MMM yyyy", { locale: de })}</p>
-              </div>
-              <div>
-                <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Personen</p>
-                <p className="font-body text-foreground">{b.persons}</p>
-              </div>
-              <div>
-                <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Gesamt</p>
-                <p className="font-display text-primary text-base">€{Number(b.total_price).toFixed(2)}</p>
-              </div>
-            </div>
-
-            {showDeposit && <PayBlock booking={b} settings={settings} mode="deposit" />}
-            {showFinal && <PayBlock booking={b} settings={settings} mode="final" />}
-
-            <div className="flex items-center justify-between gap-4 pt-4 mt-4 border-t border-border">
-              <div className="flex items-center gap-3 text-muted-foreground flex-wrap">
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" />
-                  <span className="font-body text-[11px]">
-                    Gestellt am {format(new Date(b.created_at), "dd.MM.yyyy", { locale: de })}
+    <>
+      <div className="space-y-4">
+        {bookings.map((b, i) => {
+          const status = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
+          const showDeposit = b.status === "approved" && b.payment_status === "deposit_pending";
+          const showFinal = b.payment_status === "deposit_paid" && b.status !== "rejected";
+          return (
+            <motion.div
+              key={b.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              onClick={() => setOpenId(b.id)}
+              className="border border-border bg-card p-5 md:p-6 cursor-pointer hover:border-accent/60 hover:shadow-sm transition-all"
+            >
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-accent" />
+                  <h4 className="font-display text-lg text-foreground">
+                    {b.fishing_spots?.name || "Platz"}
+                  </h4>
+                  <span className="font-body text-[10px] text-muted-foreground font-mono ml-1">
+                    #{b.id.slice(0, 8).toUpperCase()}
                   </span>
                 </div>
-                <span className="font-body text-[11px]">
-                  Status: {PAY_LABEL[b.payment_status] ?? b.payment_status}
+                <span className={`px-3 py-1 font-body text-[10px] tracking-[0.15em] uppercase border ${status.cls}`}>
+                  {status.label}
                 </span>
               </div>
-              {canCancel && (
-                <button
-                  onClick={() => handleCancel(b)}
-                  className="flex items-center gap-1.5 font-body text-[11px] tracking-[0.15em] uppercase text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <X className="w-3 h-3" /> {b.status === "pending" ? "Zurückziehen" : "Stornieren"}
-                </button>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-2 text-sm">
+                <div>
+                  <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Anreise</p>
+                  <p className="font-body text-foreground">{format(new Date(b.start_date), "dd. MMM yyyy", { locale: de })}</p>
+                </div>
+                <div>
+                  <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Abreise</p>
+                  <p className="font-body text-foreground">{format(new Date(b.end_date), "dd. MMM yyyy", { locale: de })}</p>
+                </div>
+                <div>
+                  <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Personen</p>
+                  <p className="font-body text-foreground">{b.persons}</p>
+                </div>
+                <div>
+                  <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Gesamt</p>
+                  <p className="font-display text-primary text-base">€{Number(b.total_price).toFixed(2)}</p>
+                </div>
+              </div>
+
+              {showDeposit && <div onClick={(e) => e.stopPropagation()}><PayBlock booking={b} settings={settings} mode="deposit" /></div>}
+              {showFinal && <div onClick={(e) => e.stopPropagation()}><PayBlock booking={b} settings={settings} mode="final" /></div>}
+
+              <div className="flex items-center justify-between gap-4 pt-4 mt-4 border-t border-border">
+                <div className="flex items-center gap-3 text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3 h-3" />
+                    <span className="font-body text-[11px]">
+                      Gestellt am {format(new Date(b.created_at), "dd.MM.yyyy", { locale: de })}
+                    </span>
+                  </div>
+                  <span className="font-body text-[11px]">
+                    Status: {PAY_LABEL[b.payment_status] ?? b.payment_status}
+                  </span>
+                </div>
+                <span className="font-body text-[10px] tracking-[0.15em] uppercase text-accent">
+                  Details & Verlauf →
+                </span>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <Dialog open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Buchungs-Dashboard</DialogTitle>
+          </DialogHeader>
+          {openBooking && (
+            <BookingDashboard
+              booking={openBooking}
+              settings={settings}
+              onClose={() => setOpenId(null)}
+              onCancelRequest={(b) => setCancelTarget(b)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {cancelMeta?.isPending ? "Anfrage zurückziehen?" : "Buchung stornieren?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {cancelMeta?.isPending && "Deine Anfrage wird entfernt. Das lässt sich nicht rückgängig machen."}
+              {!cancelMeta?.isPending && cancelMeta?.withinFreeWindow && (
+                <>Kostenlose Stornierung möglich. Die Anzahlung wird als erstattet markiert.</>
               )}
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
+              {!cancelMeta?.isPending && cancelMeta && !cancelMeta.withinFreeWindow && (
+                <span className="text-destructive font-medium">
+                  Achtung: Du stornierst innerhalb der {cancelMeta.cancelDays}-Tage-Frist.
+                  Die Anzahlung von €{Number(cancelTarget?.deposit_amount || 0).toFixed(2)} verfällt.
+                  Der Admin wird informiert.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Zurück</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={performCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelMeta?.isPending ? "Zurückziehen" : "Stornieren"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
