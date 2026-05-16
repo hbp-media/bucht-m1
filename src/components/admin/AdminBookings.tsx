@@ -63,9 +63,15 @@ const AdminBookings = () => {
     setLoading(true);
     let q = supabase
       .from("bookings")
-      .select("id, start_date, end_date, persons, companions, total_price, status, first_name, last_name, email, phone, created_at, fishing_spots(name)")
+      .select("id, start_date, end_date, persons, companions, total_price, status, first_name, last_name, email, phone, created_at, cancelled_at, fishing_spots(name)")
       .order("created_at", { ascending: false });
-    if (filter !== "all") q = q.eq("status", filter as any);
+    if (filter === "cancelled") {
+      q = q.not("cancelled_at", "is", null);
+    } else if (filter === "rejected") {
+      q = q.eq("status", "rejected" as any).is("cancelled_at", null);
+    } else if (filter !== "all") {
+      q = q.eq("status", filter as any);
+    }
     const { data, error } = await q;
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
