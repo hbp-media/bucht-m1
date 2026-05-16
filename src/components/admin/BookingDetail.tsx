@@ -19,6 +19,7 @@ import {
   Trash2,
   Banknote,
   CreditCard,
+  History,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -351,6 +352,51 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
           </div>
         </div>
       )}
+
+      {/* Verlauf / History */}
+      <div>
+        <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-3 flex items-center gap-1.5">
+          <History className="w-3.5 h-3.5" /> Verlauf
+        </p>
+        <ol className="relative border-l border-border ml-2 space-y-3">
+          {(() => {
+            const items: { ts: string; label: string; tone: string }[] = [];
+            items.push({ ts: b.created_at, label: "Anfrage gestellt", tone: "muted" });
+            if (b.payment_deadline && b.status !== "pending") {
+              items.push({ ts: b.payment_deadline, label: "Anzahlungs-Frist", tone: "muted" });
+            }
+            if (b.deposit_paid_at) {
+              items.push({ ts: b.deposit_paid_at, label: "Anzahlung bestätigt", tone: "ok" });
+            }
+            if (b.final_payment_due_date) {
+              items.push({ ts: b.final_payment_due_date, label: "Restzahlung fällig", tone: "muted" });
+            }
+            if (b.final_paid_at) {
+              items.push({ ts: b.final_paid_at, label: "Restzahlung bestätigt", tone: "ok" });
+            }
+            if (b.cancelled_at) {
+              items.push({ ts: b.cancelled_at, label: "Storniert", tone: "bad" });
+            } else if (b.status === "rejected") {
+              items.push({ ts: b.updated_at || b.created_at, label: "Abgelehnt", tone: "bad" });
+            }
+            return items
+              .sort((a, c) => new Date(a.ts).getTime() - new Date(c.ts).getTime())
+              .map((t, idx) => (
+                <li key={idx} className="ml-4 relative">
+                  <span
+                    className={`absolute -left-[1.4rem] top-1.5 w-3 h-3 rounded-full border-2 border-background ${
+                      t.tone === "ok" ? "bg-emerald-500" : t.tone === "bad" ? "bg-destructive" : "bg-muted-foreground/50"
+                    }`}
+                  />
+                  <p className="font-body text-sm text-foreground">{t.label}</p>
+                  <p className="font-body text-[11px] text-muted-foreground">
+                    {format(new Date(t.ts), "dd.MM.yyyy HH:mm", { locale: de })} Uhr
+                  </p>
+                </li>
+              ));
+          })()}
+        </ol>
+      </div>
 
       {/* Kunden-Nachricht */}
       {b.message && (
