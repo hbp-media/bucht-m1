@@ -54,12 +54,39 @@ const STATUS_LABEL: Record<string, string> = {
   paid: "Bezahlt",
 };
 
-const AdminBookings = () => {
+interface Props {
+  onCountsChange?: (counts: { pending: number; approved: number }) => void;
+}
+
+const AdminBookings = ({ onCountsChange }: Props = {}) => {
   const { toast } = useToast();
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [filter, setFilter] = useState<string>("pending");
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  const loadCounts = async () => {
+    const statuses = ["pending", "approved", "paid", "rejected"] as const;
+    const results = await Promise.all(
+      statuses.map((s) =>
+        supabase
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("status", s as any)
+          .is("cancelled_at", null),
+      ),
+    );
+    const cancelledRes = await supabase
+      .from("bookings")
+      .select("id", { count: "exact", head: true })
+      .not("cancelled_at", "is", null);
+    const next: Record<string, number> = {};
+    statuses.forEach((s, i) => (next[s] = results[i].count || 0));
+    next.cancelled = cancelledRes.count || 0;
+    setCounts(next);
+    onCountsChange?.({ pending: next.pending || 0, approved: next.approved || 0 });
+  };
 
   const load = async () => {
     setLoading(true);
