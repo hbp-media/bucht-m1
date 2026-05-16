@@ -208,7 +208,14 @@ const MyBookings = () => {
     <div className="space-y-4">
       {bookings.map((b, i) => {
         const status = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
-        const canCancel = b.status === "pending";
+        const cancelDays = settings?.cancellation_days_before ?? 14;
+        const startMs = new Date(b.start_date).getTime();
+        const withinFreeWindow = startMs - Date.now() > cancelDays * 86400_000;
+        const canCancel =
+          b.status === "pending" ||
+          (["deposit_paid", "paid"].includes(b.payment_status) &&
+            b.status !== "rejected" &&
+            withinFreeWindow);
         const showDeposit =
           b.status === "approved" && b.payment_status === "deposit_pending";
         const showFinal =
