@@ -73,6 +73,15 @@ Deno.serve(async (req) => {
     // Server-seitige Preisberechnung
     const pricing = await recalculatePrice(admin, booking);
 
+    // Deadline für Anzahlung aus Settings (Default 24h)
+    const { data: settings } = await admin
+      .from('payment_settings')
+      .select('deposit_deadline_hours')
+      .limit(1)
+      .maybeSingle();
+    const deadlineHours = settings?.deposit_deadline_hours ?? 24;
+    const paymentDeadline = new Date(Date.now() + deadlineHours * 3600_000).toISOString();
+
     const { data: inserted, error: insertErr } = await admin
       .from('bookings')
       .insert({
@@ -102,7 +111,8 @@ Deno.serve(async (req) => {
         extras_price: pricing.extras_price,
         total_price: pricing.total_price,
         status: 'pending',
-        payment_status: 'unpaid',
+        payment_status: 'deposit_pending',
+        payment_deadline: paymentDeadline,
       })
       .select('id')
       .single();
@@ -113,11 +123,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Bestätigungs-Mail nur an Kunden (kein Admin-Mail mehr)
+    // Anzahlungs-Mail mit IBAN + 24h-Frist an Kunde
     try {
       const url = `${supabaseUrl}/functions/v1/send-booking-email`;
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` };
-      await fetch(url, { method: 'POST', headers, body: JSON.stringify({ type: 'request_received', booking_id: inserted.id }) });
+      await fetch(url, { method: 'POST', headers, body: JSON.stringify({ type: 'deposit_request', booking_id: inserted.id }) });
     } catch (e) {
       console.error('email dispatch failed', e);
     }

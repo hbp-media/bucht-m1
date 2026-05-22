@@ -1,121 +1,60 @@
-# Umstellung: Paddle raus, manuelle Überweisung rein
+## Ziel
 
-## Neuer Ablauf
+Buchung deutlich einfacher: nur noch **2 Seiten** ohne "Weiter"-Buttons. Paddle raus, stattdessen automatisierte E-Mail mit IBAN und 24h-Frist; bei Nichtzahlung automatische Stornierung.
 
-```
-Kunde bucht ──► status: pending
-                  │
-                  ▼
-Admin gibt frei ──► status: approved
-                     • Anzahlung = 50% des Gesamtpreises
-                     • Frist: 24h
-                     • Mail mit Bankdaten + Betrag + Frist
-                     • In-App-Notification
-                  │
-       ┌──────────┴──────────┐
-       ▼                     ▼
-  Bezahlt in 24h?      Frist verstrichen
-  Admin klickt         → automatisch storniert
-  "Anzahlung           (Cron, schon vorhanden)
-   erhalten"
-       │
-       ▼
-  status: deposit_paid
-       │
-       ▼
-  X Tage vor Termin: Restzahlung fällig
-  (Mail an Kunde, Admin klickt "Restzahlung erhalten")
-       │
-       ▼
-  status: paid
-```
+## Neuer Buchungsfluss
 
-**Storno-Regel:** Bis Y Tage vor Termin kostenfrei stornierbar.
-Danach verfällt die Anzahlung.
+**Seite 1 – Platz wählen**
+- Klick auf Platz → automatischer Wechsel auf Seite 2 (kein "Weiter"-Button mehr)
+- Wochenendkarte-Option komplett entfernt
+- Fischerhütte ist immer dabei (keine Hütten-Auswahl mehr)
 
-## Was geändert wird
+**Seite 2 – Buchung abschließen** (alles auf einer kompakten Seite, kein Scrollen zwingend nötig)
+- Links: Kalender (Range-Auswahl, frei wählbarer Zeitraum, min. 3 Nächte)
+- Rechts (Sidebar):
+  - Personen-Stepper (Angler, Begleitung, Kinder)
+  - Extras-Liste (Müll entfernt — ist immer dabei)
+  - Kontaktdaten (vorausgefüllt aus Profil)
+  - Live-Summe
+  - Großer "Anfrage senden"-Button am Ende der Sidebar
+- Sobald alle Pflichtfelder ausgefüllt sind, ist der Button aktiv — kein „Weiter" mehr nötig
 
-### 1. Datenbank
+## Bezahlung — Paddle raus, Überweisung rein
 
-**Neue Tabelle `payment_settings`** (1-Zeilen-Konfig):
-- `bank_holder`, `iban`, `bic` — Bankdaten für Mail
-- `deposit_deadline_hours` (Default 24) — Frist für Anzahlung
-- `full_payment_days_before` (Default später eintragen, vorerst 14)
-- `cancellation_days_before` (Default später eintragen, vorerst 14)
-- `deposit_percent` (Default 50)
+- Paddle-Checkout, Webhooks, alle bezahl-bezogenen Edge Functions entfernen (`create-booking-checkout` vereinfachen, `mark-deposit-paid` bleibt für Admin)
+- Neue Logik nach Buchungsanlage:
+  1. Buchung wird sofort mit `status = 'pending'`, `payment_status = 'deposit_pending'`, `payment_deadline = now() + 24h` angelegt
+  2. Automatische E-Mail an Kunde via SMTP2GO: Anzahlungsbetrag, IBAN/BIC/Empfänger (aus `payment_settings`), Verwendungszweck = Buchungs-ID, 24h-Frist
+  3. Admin bekommt In-App-Notification wie bisher
+- Admin bestätigt Zahlungseingang manuell im Backend → Status auf `deposit_paid` → zweite E-Mail an Kunde mit Bestätigung + Restzahlungs-Frist
 
-**Bookings-Tabelle erweitern:**
-- `deposit_amount` numeric — berechneter 50%-Betrag
-- `deposit_paid_at` timestamp — wann Admin Anzahlung markiert hat
-- `final_payment_due_date` date — X Tage vor start_date
-- `final_paid_at` timestamp
-- Neue `payment_status` Werte: `deposit_pending`, `deposit_paid`, `paid`, `expired`, `refunded`
+## Auto-Storno nach 24h
 
-**Cron-Funktion `expire_unpaid_bookings`** umstellen: prüft jetzt `deposit_pending` + 24h-Frist statt Paddle-Deadline.
+- Neue Edge Function `auto-cancel-unpaid-bookings`: setzt alle Buchungen mit `payment_deadline < now()` und `payment_status IN ('unpaid', 'deposit_pending')` auf `status = 'rejected'`, `payment_status = 'expired'`, `cancelled_at = now()`
+- pg_cron Job alle 15 Minuten
+- Kunde bekommt automatisch eine Storno-E-Mail
 
-### 2. Admin-Bereich
+## Technische Details
 
-**Neue Seite `/admin` → Tab „Einstellungen"**
-- Felder: Kontoinhaber, IBAN, BIC
-- Slider/Inputs: Anzahlungs-Frist (h), Restzahlung-Tage-vorher, Storno-Tage-vorher, Anzahlungs-Prozent
-- Speichern-Button
+**Frontend-Änderungen**
+- `BookingSystem.tsx`: komplett umgebaut auf 2-Schritt-Layout, kein `StepIndicator`/„Weiter"
+- `StepMode.tsx`, `StepAccommodation.tsx` entfernt; `StepDates`/`StepExtras`/`StepPersons` weiter genutzt, aber neu komponiert auf einer Seite
+- Hütte wird immer auf `accommodation_type = spot.accommodation_type` und `accommodation_persons = totalPersons` gesetzt — keine UI mehr dafür
+- Müll-Extra wird aus DB-Query gefiltert (oder per `code = 'muell'` versteckt), Preis aber serverseitig immer addiert
 
-**Buchungsdetail (`BookingDetail.tsx`):**
-- Paddle-Bezug raus
-- Neue Buttons:
-  - „Buchung freigeben" (wie bisher, jetzt mit Anzahlungs-Mail)
-  - „Anzahlung erhalten" (nach Freigabe)
-  - „Restzahlung erhalten" (nach Anzahlung)
-  - „Stornieren" (markiert je nach Frist als storniert/refundiert)
-- Anzeige: Anzahlungsbetrag, Restbetrag, Fristen, Bezahl-Status
+**Backend-Änderungen**
+- `create-booking-checkout/index.ts`: Status direkt `pending`+`deposit_pending` setzen, `payment_deadline = now() + 24h`, Anzahlung berechnen, neuen E-Mail-Typ `deposit_request` triggern (existiert schon in `send-booking-email`)
+- Neue Edge Function `auto-cancel-unpaid-bookings`
+- pg_cron-Job via Supabase Insert-Tool
+- Paddle-spezifischer Code raus: `create-booking-checkout` säubern, `_shared/paddle.ts` entfernen, `PADDLE_*` Secrets bleiben unbenutzt (kein Schaden)
 
-### 3. Kunden-Bereich
+**Datenbank**
+- Keine Schema-Änderungen nötig (Status `deposit_pending`, `expired`, `payment_deadline` existieren bereits)
+- Optional: Müll-Extra in DB als `active = false` markieren oder per Code-Flag verstecken — Vorschlag: per `code = 'muell'` UI-seitig filtern, damit der Preis trotzdem serverseitig fix dabei ist
 
-**`MyBookings.tsx`:**
-- Paddle-Checkout-Button raus
-- Stattdessen Status-Anzeige mit Bankdaten + Verwendungszweck (Buchungs-ID)
-- Klare Anzeige: „Bitte bis HH:MM überweisen" / „Anzahlung erhalten — Restzahlung bis TT.MM."
+## Was bleibt unverändert
 
-### 4. E-Mails (über bestehendes SMTP2GO via `send-booking-email`)
-
-Neue Templates:
-- `deposit_request` — bei Freigabe: Bankdaten + Betrag + 24h-Frist
-- `deposit_received` — Bestätigung nach Admin-Klick
-- `final_payment_request` — X Tage vor Termin
-- `final_payment_received` — nach Admin-Klick
-- `cancelled_deposit_forfeit` — bei zu später Storno
-- `auto_expired` — bei abgelaufener Anzahlungsfrist
-
-### 5. Paddle entfernen
-
-- `src/lib/paddle.ts` — löschen
-- `src/components/PaymentTestModeBanner.tsx` — löschen
-- `App.tsx`/Layout — Banner-Import raus
-- `.env.development` / `.env.production` — `VITE_PAYMENTS_CLIENT_TOKEN` raus
-- Edge Functions löschen: `create-booking-checkout`, `create-payment-checkout`, `payments-webhook`
-- `bookings.paddle_transaction_id` Spalte: behalten (alte Buchungen referenzieren sie evtl.), aber nicht mehr nutzen
-- Paddle-Secrets bleiben in den Connectors (kann der User selbst trennen)
-
-## Was später noch von dir kommt
-
-- Echte Bankdaten (Kontoinhaber, IBAN, BIC)
-- Restzahlung-Tage-vorher (Default 14)
-- Storno-Tage-vorher (Default 14)
-- Wie Restzahlung läuft (Überweisung / bar / Wahl)
-
-→ Default-Werte 14/14 setze ich jetzt, du änderst sie später jederzeit in den Admin-Einstellungen ohne Code-Änderung.
-
-## Reihenfolge der Umsetzung
-
-1. Migration: `payment_settings` Tabelle + `bookings`-Spalten + `payment_status`-Enum erweitern + Cron-Funktion umstellen
-2. Admin-Settings-Page bauen
-3. `BookingDetail.tsx` umstellen (neue Buttons, Paddle raus)
-4. `MyBookings.tsx` umstellen (Bankdaten-Anzeige statt Checkout)
-5. `send-booking-email` um neue Templates erweitern
-6. `approve-booking` Edge Function: berechnet Anzahlung, setzt 24h-Frist, sendet `deposit_request`
-7. Neue Edge Functions: `mark-deposit-paid`, `mark-final-paid`, `cancel-booking-admin`
-8. Cron-Job für Restzahlungs-Erinnerung (täglich, prüft `final_payment_due_date`)
-9. Paddle-Code & Edge Functions löschen
-10. Test-Lauf der ganzen Strecke
-
-Soll ich so loslegen?
+- Admin-Bereich (Buchungsübersicht, Detail, Notifications)
+- Auth, Profile, Sperrtage
+- SMTP2GO für E-Mails (schon vorhanden)
+- Pricing-Logik in `_shared/booking-pricing.ts` (Müll bleibt im Preis enthalten)
