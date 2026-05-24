@@ -96,7 +96,7 @@ const Navbar = () => {
             </Link>
           )}
 
-          {user && <NotificationBell />}
+          {user && !isAdmin && <NotificationBell />}
 
           <Link
             to={user ? "/account" : "/login"}
