@@ -116,6 +116,23 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
     loadCounts();
   }, [filter]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-bookings-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => {
+          load();
+          loadCounts();
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [filter]);
+
   return (
     <div>
       {/* Filter */}
