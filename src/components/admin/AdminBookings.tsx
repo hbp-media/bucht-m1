@@ -213,9 +213,16 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
                         )}
                       </>
                     ) : (
-                      <span className={`px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border ${STATUS_BADGE[b.status]}`}>
-                        {STATUS_LABEL[b.status]}
-                      </span>
+                      (() => {
+                        const isDepPaid = b.status === "approved" && b.payment_status === "deposit_paid";
+                        const cls = isDepPaid ? "bg-primary/10 text-primary border-primary/20" : STATUS_BADGE[b.status];
+                        const label = isDepPaid ? "Anzahlung erhalten" : STATUS_LABEL[b.status];
+                        return (
+                          <span className={`px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border ${cls}`}>
+                            {label}
+                          </span>
+                        );
+                      })()
                     )}
                   </div>
                   <p className="font-body text-xs text-muted-foreground mb-2">
