@@ -33,8 +33,9 @@ interface AdminBooking {
 
 const STATUS_FILTERS = [
   { key: "pending", label: "Anfragen" },
-  { key: "approved", label: "Bestätigt (unbezahlt)" },
-  { key: "paid", label: "Bezahlt" },
+  { key: "approved_unpaid", label: "Anzahlung offen" },
+  { key: "deposit_paid", label: "Anzahlung erhalten" },
+  { key: "paid", label: "Vollständig bezahlt" },
   { key: "cancelled", label: "Storniert" },
   { key: "rejected", label: "Abgelehnt" },
   { key: "all", label: "Alle" },
@@ -49,9 +50,9 @@ const STATUS_BADGE: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Vorreserviert",
-  approved: "Bestätigt (unbezahlt)",
+  approved: "Bestätigt · Anzahlung offen",
   rejected: "Abgelehnt",
-  paid: "Bezahlt",
+  paid: "Vollständig bezahlt",
 };
 
 interface Props {
@@ -67,26 +68,30 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   const loadCounts = async () => {
-    const statuses = ["pending", "approved", "paid", "rejected"] as const;
-    const results = await Promise.all(
-      statuses.map((s) =>
-        supabase
-          .from("bookings")
-          .select("id", { count: "exact", head: true })
-          .eq("status", s as any)
-          .is("cancelled_at", null),
-      ),
-    );
-    const cancelledRes = await supabase
-      .from("bookings")
-      .select("id", { count: "exact", head: true })
-      .not("cancelled_at", "is", null)
-      .in("payment_status", ["deposit_paid", "paid"] as any);
-    const next: Record<string, number> = {};
-    statuses.forEach((s, i) => (next[s] = results[i].count || 0));
-    next.cancelled = cancelledRes.count || 0;
+    const [pendingRes, approvedUnpaidRes, depositPaidRes, paidRes, cancelledRes] = await Promise.all([
+      supabase.from("bookings").select("id", { count: "exact", head: true })
+        .eq("status", "pending" as any).is("cancelled_at", null),
+      supabase.from("bookings").select("id", { count: "exact", head: true })
+        .eq("status", "approved" as any).in("payment_status", ["unpaid", "deposit_pending"] as any).is("cancelled_at", null),
+      supabase.from("bookings").select("id", { count: "exact", head: true })
+        .eq("status", "approved" as any).eq("payment_status", "deposit_paid" as any).is("cancelled_at", null),
+      supabase.from("bookings").select("id", { count: "exact", head: true })
+        .eq("status", "paid" as any).is("cancelled_at", null),
+      supabase.from("bookings").select("id", { count: "exact", head: true })
+        .not("cancelled_at", "is", null).in("payment_status", ["deposit_paid", "paid"] as any),
+    ]);
+    const next: Record<string, number> = {
+      pending: pendingRes.count || 0,
+      approved_unpaid: approvedUnpaidRes.count || 0,
+      deposit_paid: depositPaidRes.count || 0,
+      paid: paidRes.count || 0,
+      cancelled: cancelledRes.count || 0,
+    };
     setCounts(next);
-    onCountsChange?.({ pending: next.pending || 0, approved: (next.approved || 0) + (next.cancelled || 0) });
+    onCountsChange?.({
+      pending: next.pending,
+      approved: next.approved_unpaid + next.deposit_paid + next.cancelled,
+    });
   };
 
   const load = async () => {
@@ -99,8 +104,12 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
       q = q.not("cancelled_at", "is", null);
     } else if (filter === "rejected") {
       q = q.eq("status", "rejected" as any).is("cancelled_at", null);
+    } else if (filter === "approved_unpaid") {
+      q = q.eq("status", "approved" as any).in("payment_status", ["unpaid", "deposit_pending"] as any).is("cancelled_at", null);
+    } else if (filter === "deposit_paid") {
+      q = q.eq("status", "approved" as any).eq("payment_status", "deposit_paid" as any).is("cancelled_at", null);
     } else if (filter !== "all") {
-      q = q.eq("status", filter as any);
+      q = q.eq("status", filter as any).is("cancelled_at", null);
     }
     const { data, error } = await q;
     if (error) {
@@ -139,7 +148,7 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
       <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
         {STATUS_FILTERS.map((f) => {
           const count = counts[f.key] || 0;
-          const isAction = f.key === "pending" || f.key === "approved" || f.key === "cancelled";
+          const isAction = ["pending", "approved_unpaid", "deposit_paid", "cancelled"].includes(f.key);
           return (
             <button
               key={f.key}
