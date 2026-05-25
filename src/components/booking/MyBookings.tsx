@@ -139,6 +139,9 @@ const PayBlock = ({ booking, settings, mode }: { booking: Booking; settings: Pay
       <p className="font-body text-[11px] text-muted-foreground mt-3 leading-relaxed">
         Bitte den Verwendungszweck genau so angeben — sonst können wir die Zahlung nicht zuordnen.
         Sobald der Betrag bei uns eingeht, bestätigen wir manuell und du erhältst eine E-Mail.
+        {mode === "deposit" && (
+          <> Du kannst bis <strong>{(settings?.cancellation_days_before ?? 14)} Tage vor Anreise</strong> kostenlos stornieren – die Anzahlung wird dann vollständig erstattet.</>
+        )}
       </p>
     </div>
   );
