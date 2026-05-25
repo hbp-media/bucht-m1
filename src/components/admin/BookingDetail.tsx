@@ -20,6 +20,7 @@ import {
   Banknote,
   CreditCard,
   History,
+  AlertTriangle,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -65,16 +66,17 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [notes, setNotes] = useState("");
+  const [cancelDays, setCancelDays] = useState<number>(14);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("bookings")
-      .select("*, fishing_spots(name)")
-      .eq("id", bookingId)
-      .maybeSingle();
-    setB(data);
-    setNotes(data?.admin_notes || "");
+    const [bookingRes, settingsRes] = await Promise.all([
+      supabase.from("bookings").select("*, fishing_spots(name)").eq("id", bookingId).maybeSingle(),
+      supabase.from("payment_settings").select("cancellation_days_before").limit(1).maybeSingle(),
+    ]);
+    setB(bookingRes.data);
+    setNotes(bookingRes.data?.admin_notes || "");
+    if (settingsRes.data?.cancellation_days_before) setCancelDays(settingsRes.data.cancellation_days_before);
     setLoading(false);
   };
 
@@ -305,11 +307,35 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
       </div>
 
       {/* Zahlungs-Status */}
-      {(b.status === "approved" || b.status === "paid") && (
+      {(b.status === "approved" || b.status === "paid") && (() => {
+        const startMs = new Date(b.start_date).getTime();
+        const daysToArrival = Math.ceil((startMs - Date.now()) / 86400_000);
+        const withinFreeWindow = daysToArrival > cancelDays;
+        const depositPaid = !!b.deposit_paid_at && b.status !== "rejected";
+        return (
         <div className="border border-border bg-card p-4 space-y-2">
           <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
             <Banknote className="w-3.5 h-3.5" /> Zahlungs-Status
           </p>
+          {depositPaid && (
+            withinFreeWindow ? (
+              <div className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 text-amber-900">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="font-body text-xs leading-relaxed">
+                  <strong>Kunde kann noch kostenlos stornieren</strong> – {daysToArrival} {daysToArrival === 1 ? "Tag" : "Tage"} bis Anreise,
+                  Frist {cancelDays} Tage. Bei Storno müsste die Anzahlung von €{deposit.toFixed(2)} per Überweisung erstattet werden.
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-900">
+                <Check className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="font-body text-xs leading-relaxed">
+                  <strong>Anzahlung gesichert</strong> – Stornofrist abgelaufen ({cancelDays}-Tage-Frist).
+                  Bei Storno verfällt die Anzahlung zugunsten der Bucht.
+                </p>
+              </div>
+            )
+          )}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Status</p>
@@ -351,7 +377,8 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Verlauf / History */}
       <div>
