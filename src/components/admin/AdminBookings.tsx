@@ -63,6 +63,7 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [filter, setFilter] = useState<string>("pending");
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [seen, setSeen] = useState<Record<string, number>>({});
 
