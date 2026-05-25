@@ -20,6 +20,7 @@ import {
   Banknote,
   CreditCard,
   History,
+  AlertTriangle,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
