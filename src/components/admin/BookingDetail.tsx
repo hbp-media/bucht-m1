@@ -66,6 +66,7 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [notes, setNotes] = useState("");
+  const [cancelDays, setCancelDays] = useState<number>(14);
 
   const load = async () => {
     setLoading(true);
