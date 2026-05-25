@@ -140,7 +140,7 @@ const PayBlock = ({ booking, settings, mode }: { booking: Booking; settings: Pay
         Bitte den Verwendungszweck genau so angeben — sonst können wir die Zahlung nicht zuordnen.
         Sobald der Betrag bei uns eingeht, bestätigen wir manuell und du erhältst eine E-Mail.
         {mode === "deposit" && (
-          <> Du kannst bis <strong>{(settings?.cancellation_days_before ?? 14)} Tage vor Anreise</strong> kostenlos stornieren – die Anzahlung wird dann vollständig erstattet.</>
+          <> Hinweis: Die Anzahlung ist <strong>nicht erstattbar</strong> – bei Storno verfällt sie.</>
         )}
       </p>
     </div>
@@ -270,21 +270,12 @@ const BookingDashboard = ({ booking, settings, onClose, onCancelRequest }: {
 
       {canCancel && (
         <div className="pt-4 border-t border-border">
-          {withinFreeWindow && booking.status !== "pending" && (
-            <div className="flex items-start gap-2 p-3 mb-3 bg-emerald-50 border border-emerald-200 text-emerald-900">
-              <Check className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <p className="font-body text-xs leading-relaxed">
-                <strong>Kostenlose Stornierung möglich.</strong> Bis {cancelDays} Tage vor Anreise
-                kannst du diese Buchung stornieren – die Anzahlung von €{deposit.toFixed(2)} wird
-                vollständig erstattet. Danach verfällt sie.
-              </p>
-            </div>
-          )}
-          {!withinFreeWindow && booking.status !== "pending" && (
+          {booking.status !== "pending" && (
             <div className="flex items-start gap-2 p-3 mb-3 bg-amber-50 border border-amber-200 text-amber-900">
               <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <p className="font-body text-xs">
-                Stornierung innerhalb der {cancelDays}-Tage-Frist vor Anreise – die Anzahlung von €{deposit.toFixed(2)} verfällt.
+              <p className="font-body text-xs leading-relaxed">
+                Die Anzahlung von €{deposit.toFixed(2)} ist <strong>nicht erstattbar</strong>.
+                Bei Stornierung verfällt sie zugunsten der Bucht.
               </p>
             </div>
           )}
@@ -487,17 +478,9 @@ const MyBookings = () => {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {cancelMeta?.isPending && "Deine Anfrage wird entfernt. Das lässt sich nicht rückgängig machen."}
-              {!cancelMeta?.isPending && cancelMeta?.withinFreeWindow && (
-                <>
-                  Du bist noch innerhalb der <strong>{cancelMeta.cancelDays}-Tage-Frist vor Anreise</strong>.
-                  Die Stornierung ist kostenlos – deine Anzahlung von €{Number(cancelTarget?.deposit_amount || 0).toFixed(2)} wird vollständig erstattet.
-                </>
-              )}
-              {!cancelMeta?.isPending && cancelMeta && !cancelMeta.withinFreeWindow && (
+              {!cancelMeta?.isPending && (
                 <span className="text-destructive font-medium">
-                  Achtung: Du stornierst innerhalb der {cancelMeta.cancelDays}-Tage-Frist vor Anreise.
-                  Die Anzahlung von €{Number(cancelTarget?.deposit_amount || 0).toFixed(2)} verfällt.
-                  Der Admin wird informiert.
+                  Achtung: Die Anzahlung von €{Number(cancelTarget?.deposit_amount || 0).toFixed(2)} ist nicht erstattbar und verfällt mit der Stornierung.
                 </span>
               )}
             </AlertDialogDescription>
