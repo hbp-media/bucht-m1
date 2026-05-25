@@ -70,13 +70,13 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("bookings")
-      .select("*, fishing_spots(name)")
-      .eq("id", bookingId)
-      .maybeSingle();
-    setB(data);
-    setNotes(data?.admin_notes || "");
+    const [bookingRes, settingsRes] = await Promise.all([
+      supabase.from("bookings").select("*, fishing_spots(name)").eq("id", bookingId).maybeSingle(),
+      supabase.from("payment_settings").select("cancellation_days_before").limit(1).maybeSingle(),
+    ]);
+    setB(bookingRes.data);
+    setNotes(bookingRes.data?.admin_notes || "");
+    if (settingsRes.data?.cancellation_days_before) setCancelDays(settingsRes.data.cancellation_days_before);
     setLoading(false);
   };
 
