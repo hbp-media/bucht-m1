@@ -126,6 +126,12 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
   }, [filter]);
 
   useEffect(() => {
+    if (counts[filter] !== undefined) {
+      setSeen((s) => ({ ...s, [filter]: counts[filter] }));
+    }
+  }, [counts, filter]);
+
+  useEffect(() => {
     const channel = supabase
       .channel("admin-bookings-rt")
       .on(
