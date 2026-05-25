@@ -198,7 +198,7 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
                         {["deposit_paid", "paid"].includes(b.payment_status) ? (
                           <span
                             className="px-2 py-0.5 font-body text-[10px] tracking-[0.15em] uppercase border bg-red-50 text-red-700 border-red-200"
-                            title="Spät storniert – Anzahlung verfällt zugunsten der Bucht"
+                            title="Storno innerhalb der Frist – Anzahlung verfällt zugunsten der Bucht"
                           >
                             Anzahlung verfällt · €{Number(b.deposit_amount || 0).toFixed(2)}
                           </span>

@@ -142,8 +142,8 @@ Deno.serve(async (req) => {
         const rows = admins.map((a: { user_id: string }) => ({
           user_id: a.user_id,
           type: 'admin_new_booking',
-          title: 'Neue Buchungsanfrage',
-          message: `${booking.first_name} ${booking.last_name} – ${booking.start_date} bis ${booking.end_date}`,
+          title: 'Aktion: Neue Buchungsanfrage prüfen',
+          message: `${booking.first_name} ${booking.last_name} – ${booking.start_date} bis ${booking.end_date}. Bitte freigeben oder ablehnen.`,
           link: '/admin',
           booking_id: inserted.id,
         }));
