@@ -487,11 +487,14 @@ const MyBookings = () => {
             <AlertDialogDescription>
               {cancelMeta?.isPending && "Deine Anfrage wird entfernt. Das lässt sich nicht rückgängig machen."}
               {!cancelMeta?.isPending && cancelMeta?.withinFreeWindow && (
-                <>Kostenlose Stornierung möglich. Die Anzahlung wird als erstattet markiert.</>
+                <>
+                  Du bist noch innerhalb der <strong>{cancelMeta.cancelDays}-Tage-Frist vor Anreise</strong>.
+                  Die Stornierung ist kostenlos – deine Anzahlung von €{Number(cancelTarget?.deposit_amount || 0).toFixed(2)} wird vollständig erstattet.
+                </>
               )}
               {!cancelMeta?.isPending && cancelMeta && !cancelMeta.withinFreeWindow && (
                 <span className="text-destructive font-medium">
-                  Achtung: Du stornierst innerhalb der {cancelMeta.cancelDays}-Tage-Frist.
+                  Achtung: Du stornierst innerhalb der {cancelMeta.cancelDays}-Tage-Frist vor Anreise.
                   Die Anzahlung von €{Number(cancelTarget?.deposit_amount || 0).toFixed(2)} verfällt.
                   Der Admin wird informiert.
                 </span>
