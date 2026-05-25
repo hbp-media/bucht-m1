@@ -48,6 +48,11 @@ const Admin = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingAdminId, setTogglingAdminId] = useState<string | null>(null);
   const [bookingActionCount, setBookingActionCount] = useState(0);
+  const [bookingSeenCount, setBookingSeenCount] = useState(0);
+
+  useEffect(() => {
+    if (tab === "bookings") setBookingSeenCount(bookingActionCount);
+  }, [tab, bookingActionCount]);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
