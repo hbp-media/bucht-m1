@@ -48,6 +48,11 @@ const Admin = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingAdminId, setTogglingAdminId] = useState<string | null>(null);
   const [bookingActionCount, setBookingActionCount] = useState(0);
+  const [bookingSeenCount, setBookingSeenCount] = useState(0);
+
+  useEffect(() => {
+    if (tab === "bookings") setBookingSeenCount(bookingActionCount);
+  }, [tab, bookingActionCount]);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -144,7 +149,7 @@ const Admin = () => {
 
             {/* Tabs */}
             <div className="flex flex-wrap justify-center gap-1 mb-10 border-b border-border">
-              <TabBtn active={tab === "bookings"} onClick={() => setTab("bookings")} icon={<Calendar className="w-4 h-4" />} badge={bookingActionCount}>Buchungen</TabBtn>
+              <TabBtn active={tab === "bookings"} onClick={() => setTab("bookings")} icon={<Calendar className="w-4 h-4" />} badge={Math.max(0, bookingActionCount - bookingSeenCount)}>Buchungen</TabBtn>
               <TabBtn active={tab === "calendar"} onClick={() => setTab("calendar")} icon={<CalendarDays className="w-4 h-4" />}>Kalender</TabBtn>
               <TabBtn active={tab === "users"} onClick={() => setTab("users")} icon={<Users className="w-4 h-4" />}>Benutzer</TabBtn>
               <TabBtn active={tab === "spots"} onClick={() => setTab("spots")} icon={<MapPin className="w-4 h-4" />}>Plätze</TabBtn>
