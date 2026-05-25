@@ -377,7 +377,8 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Verlauf / History */}
       <div>
