@@ -452,10 +452,55 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      payment_settings_public: {
+        Row: {
+          cancellation_days_before: number | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          deposit_deadline_hours: number | null
+          deposit_percent: number | null
+          full_payment_days_before: number | null
+          id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cancellation_days_before?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          deposit_deadline_hours?: number | null
+          deposit_percent?: number | null
+          full_payment_days_before?: number | null
+          id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cancellation_days_before?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          deposit_deadline_hours?: number | null
+          deposit_percent?: number | null
+          full_payment_days_before?: number | null
+          id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       expire_unpaid_bookings: { Args: never; Returns: number }
+      get_payment_bank_details: {
+        Args: never
+        Returns: {
+          bank_holder: string
+          bic: string
+          cancellation_days_before: number
+          deposit_deadline_hours: number
+          iban: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

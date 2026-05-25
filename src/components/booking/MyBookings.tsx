@@ -318,10 +318,11 @@ const MyBookings = () => {
         .select("*, fishing_spots(name)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
-      supabase.from("payment_settings").select("bank_holder,iban,bic,deposit_deadline_hours,cancellation_days_before").limit(1).maybeSingle(),
+      supabase.rpc("get_payment_bank_details"),
     ]);
     setBookings((bRes.data as Booking[]) || []);
-    setSettings((sRes.data as PaySettings) || null);
+    const row = Array.isArray(sRes.data) ? sRes.data[0] : sRes.data;
+    setSettings((row as PaySettings) || null);
     setLoading(false);
   };
 
