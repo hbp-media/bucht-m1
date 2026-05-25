@@ -38,7 +38,6 @@ const STATUS_FILTERS = [
   { key: "paid", label: "Vollständig bezahlt" },
   { key: "cancelled", label: "Storniert" },
   { key: "rejected", label: "Abgelehnt" },
-  { key: "all", label: "Alle" },
 ];
 
 const STATUS_BADGE: Record<string, string> = {
