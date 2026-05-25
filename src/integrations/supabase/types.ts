@@ -491,6 +491,16 @@ export type Database = {
     }
     Functions: {
       expire_unpaid_bookings: { Args: never; Returns: number }
+      get_payment_bank_details: {
+        Args: never
+        Returns: {
+          bank_holder: string
+          bic: string
+          cancellation_days_before: number
+          deposit_deadline_hours: number
+          iban: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
