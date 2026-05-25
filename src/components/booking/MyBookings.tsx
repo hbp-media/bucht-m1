@@ -267,11 +267,21 @@ const BookingDashboard = ({ booking, settings, onClose, onCancelRequest }: {
 
       {canCancel && (
         <div className="pt-4 border-t border-border">
+          {withinFreeWindow && booking.status !== "pending" && (
+            <div className="flex items-start gap-2 p-3 mb-3 bg-emerald-50 border border-emerald-200 text-emerald-900">
+              <Check className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p className="font-body text-xs leading-relaxed">
+                <strong>Kostenlose Stornierung möglich.</strong> Bis {cancelDays} Tage vor Anreise
+                kannst du diese Buchung stornieren – die Anzahlung von €{deposit.toFixed(2)} wird
+                vollständig erstattet. Danach verfällt sie.
+              </p>
+            </div>
+          )}
           {!withinFreeWindow && booking.status !== "pending" && (
             <div className="flex items-start gap-2 p-3 mb-3 bg-amber-50 border border-amber-200 text-amber-900">
               <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <p className="font-body text-xs">
-                Stornierung innerhalb der {cancelDays}-Tage-Frist – die Anzahlung von €{deposit.toFixed(2)} verfällt.
+                Stornierung innerhalb der {cancelDays}-Tage-Frist vor Anreise – die Anzahlung von €{deposit.toFixed(2)} verfällt.
               </p>
             </div>
           )}
