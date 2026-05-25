@@ -148,11 +148,13 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
       <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
         {STATUS_FILTERS.map((f) => {
           const count = counts[f.key] || 0;
+          const seenCount = seen[f.key] ?? 0;
           const alwaysShowCount = ["pending", "approved_unpaid", "deposit_paid"].includes(f.key);
           const isAction = ["pending", "approved_unpaid", "cancelled"].includes(f.key);
-          const showBadge = alwaysShowCount || (isAction && count > 0);
+          const hasUnseen = isAction && count > seenCount;
+          const showBadge = alwaysShowCount || hasUnseen;
           const active = filter === f.key;
-          const badgeCls = isAction && count > 0
+          const badgeCls = hasUnseen
             ? "bg-red-600 text-white"
             : active
               ? "bg-primary/15 text-primary"
@@ -160,7 +162,10 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
           return (
             <button
               key={f.key}
-              onClick={() => setFilter(f.key)}
+              onClick={() => {
+                setFilter(f.key);
+                setSeen((s) => ({ ...s, [f.key]: count }));
+              }}
               className={`px-4 py-2 font-body text-[11px] tracking-[0.2em] uppercase border-b-2 transition-colors -mb-px inline-flex items-center gap-2 ${
                 active
                   ? "border-primary text-foreground"
