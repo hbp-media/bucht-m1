@@ -109,7 +109,39 @@ const PayBlock = ({ booking, settings, mode }: { booking: Booking; settings: Pay
     ? Number(booking.deposit_amount || 0)
     : Number(booking.total_price) - Number(booking.deposit_amount || 0);
   const reference = `Bucht M1 / ${booking.last_name} / ${booking.id.slice(0, 8)}`;
-  const title = mode === "deposit" ? "Anzahlung offen" : "Restzahlung fällig";
+  const title = mode === "deposit" ? "Anzahlung offen" : "Restzahlung vor Ort";
+
+  // Restzahlung erfolgt vor Ort — keine Überweisung, keine Bankdaten.
+  if (mode === "final") {
+    return (
+      <div className="mt-4 p-4 md:p-5 border border-primary/30 bg-primary/5">
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+          <div className="flex items-center gap-2">
+            <Banknote className="w-4 h-4 text-primary" />
+            <p className="font-body text-[11px] tracking-[0.2em] uppercase text-primary">{title}</p>
+          </div>
+          <p className="font-body text-xs text-foreground">
+            Betrag: <strong>€{amount.toFixed(2)}</strong>
+          </p>
+        </div>
+        <div className="bg-background border border-border p-3 md:p-4 space-y-2">
+          <p className="font-body text-sm text-foreground leading-relaxed">
+            Die <strong>Restzahlung von €{amount.toFixed(2)}</strong> wird <strong>bar oder per EC-Karte direkt vor Ort</strong> bei deiner Anreise am{" "}
+            <strong>{format(new Date(booking.start_date), "dd.MM.yyyy", { locale: de })}</strong> beglichen.
+          </p>
+          <p className="font-body text-xs text-muted-foreground leading-relaxed">
+            Keine Überweisung nötig. Sobald wir die Zahlung vor Ort erhalten haben, markieren wir deine Buchung als vollständig bezahlt.
+          </p>
+        </div>
+        <div className="flex items-start gap-2 mt-3 p-2.5 bg-amber-50 border border-amber-200 text-amber-900">
+          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+          <p className="font-body text-[11px] leading-relaxed">
+            <strong>Wichtig:</strong> Erfolgt die Restzahlung nicht bis zum Check-in, wird die Buchung automatisch storniert und die Anzahlung verfällt.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 p-4 md:p-5 border border-primary/30 bg-primary/5">
@@ -118,14 +150,9 @@ const PayBlock = ({ booking, settings, mode }: { booking: Booking; settings: Pay
           <Banknote className="w-4 h-4 text-primary" />
           <p className="font-body text-[11px] tracking-[0.2em] uppercase text-primary">{title}</p>
         </div>
-        {mode === "deposit" && booking.payment_deadline && (
+        {booking.payment_deadline && (
           <p className="font-body text-xs text-foreground">
             Frist: <strong className={expired ? "text-destructive" : ""}>{remaining ?? "—"}</strong>
-          </p>
-        )}
-        {mode === "final" && booking.final_payment_due_date && (
-          <p className="font-body text-xs text-foreground">
-            Bis: <strong>{format(new Date(booking.final_payment_due_date), "dd.MM.yyyy", { locale: de })}</strong>
           </p>
         )}
       </div>
@@ -139,9 +166,7 @@ const PayBlock = ({ booking, settings, mode }: { booking: Booking; settings: Pay
       <p className="font-body text-[11px] text-muted-foreground mt-3 leading-relaxed">
         Bitte den Verwendungszweck genau so angeben — sonst können wir die Zahlung nicht zuordnen.
         Sobald der Betrag bei uns eingeht, bestätigen wir manuell und du erhältst eine E-Mail.
-        {mode === "deposit" && (
-          <> Hinweis: Die Anzahlung ist <strong>nicht erstattbar</strong> – bei Storno verfällt sie.</>
-        )}
+        Hinweis: Die Anzahlung ist <strong>nicht erstattbar</strong> – bei Storno verfällt sie. Die <strong>Restzahlung erfolgt später vor Ort</strong> (bar oder EC).
       </p>
     </div>
   );
@@ -384,7 +409,14 @@ const MyBookings = () => {
     <>
       <div className="space-y-4">
         {bookings.map((b, i) => {
-          const status = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
+          const baseStatus = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
+          // Klarere Anzeige bei Storno: unterscheide "Storniert – Anzahlung verfallen" vs. einfache Stornierung
+          const status =
+            b.status === "rejected" && (b.payment_status === "deposit_paid" || b.payment_status === "paid")
+              ? { label: "Storniert – Anzahlung verfallen", cls: "bg-red-100 text-red-800 border-red-200" }
+              : b.status === "approved" && b.payment_status === "deposit_paid"
+                ? { label: "Anzahlung bezahlt – Restzahlung vor Ort", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" }
+                : baseStatus;
           const showDeposit = b.status === "approved" && b.payment_status === "deposit_pending";
           const showFinal = b.payment_status === "deposit_paid" && b.status !== "rejected";
           return (
