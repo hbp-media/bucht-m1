@@ -409,7 +409,14 @@ const MyBookings = () => {
     <>
       <div className="space-y-4">
         {bookings.map((b, i) => {
-          const status = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
+          const baseStatus = STATUS_LABEL[b.status] || STATUS_LABEL.pending;
+          // Klarere Anzeige bei Storno: unterscheide "Storniert – Anzahlung verfallen" vs. einfache Stornierung
+          const status =
+            b.status === "rejected" && (b.payment_status === "deposit_paid" || b.payment_status === "paid")
+              ? { label: "Storniert – Anzahlung verfallen", cls: "bg-red-100 text-red-800 border-red-200" }
+              : b.status === "approved" && b.payment_status === "deposit_paid"
+                ? { label: "Anzahlung bezahlt – Restzahlung vor Ort", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" }
+                : baseStatus;
           const showDeposit = b.status === "approved" && b.payment_status === "deposit_pending";
           const showFinal = b.payment_status === "deposit_paid" && b.status !== "rejected";
           return (
