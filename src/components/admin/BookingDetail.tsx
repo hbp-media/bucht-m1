@@ -140,7 +140,7 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
     setActing(true);
     const { error } = await supabase
       .from("bookings")
-      .update({ status: "rejected", cancelled_at: new Date().toISOString() })
+      .update({ status: "rejected", cancelled_at: new Date().toISOString(), cancelled_by: "admin" })
       .eq("id", bookingId);
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
