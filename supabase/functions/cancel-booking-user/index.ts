@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
     const updates: Record<string, unknown> = {
       status: 'rejected',
       cancelled_at: new Date().toISOString(),
+      cancelled_by: 'user',
       updated_at: new Date().toISOString(),
     };
     if (isPaidStage && !lateCancel) updates.payment_status = 'refunded';
