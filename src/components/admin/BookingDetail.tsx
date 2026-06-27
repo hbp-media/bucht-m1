@@ -388,7 +388,15 @@ const BookingDetail = ({ bookingId, onClose, onChanged }: Props) => {
               items.push({ ts: b.final_paid_at, label: "Restzahlung bestätigt", tone: "ok" });
             }
             if (b.cancelled_at) {
-              items.push({ ts: b.cancelled_at, label: "Storniert", tone: "bad" });
+              const who =
+                b.cancelled_by === "user"
+                  ? "Kunde"
+                  : b.cancelled_by === "admin"
+                  ? "Admin"
+                  : b.cancelled_by === "system"
+                  ? "System (Frist abgelaufen)"
+                  : "Unbekannt";
+              items.push({ ts: b.cancelled_at, label: `Storniert durch ${who}`, tone: "bad" });
             } else if (b.status === "rejected") {
               items.push({ ts: b.updated_at || b.created_at, label: "Abgelehnt", tone: "bad" });
             }
