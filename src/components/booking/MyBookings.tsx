@@ -193,7 +193,19 @@ const buildTimeline = (b: Booking): { ts: string; label: string; tone: string }[
     items.push({ ts: b.final_paid_at, label: "Restzahlung bestätigt", tone: "ok" });
   }
   if (b.status === "rejected") {
-    items.push({ ts: b.created_at, label: "Storniert / Abgelehnt", tone: "bad" });
+    const who =
+      b.cancelled_by === "user"
+        ? "durch Kunde"
+        : b.cancelled_by === "admin"
+        ? "durch Admin"
+        : b.cancelled_by === "system"
+        ? "automatisch (Frist abgelaufen)"
+        : "";
+    items.push({
+      ts: b.cancelled_at || b.created_at,
+      label: who ? `Storniert ${who}` : "Storniert / Abgelehnt",
+      tone: "bad",
+    });
   }
   return items.sort((a, c) => new Date(a.ts).getTime() - new Date(c.ts).getTime());
 };
