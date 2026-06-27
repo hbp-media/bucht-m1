@@ -57,6 +57,7 @@ export type Database = {
           base_price: number
           booking_mode: string
           cancelled_at: string | null
+          cancelled_by: string | null
           cleaning_price: number
           companions: number
           created_at: string
@@ -97,6 +98,7 @@ export type Database = {
           base_price?: number
           booking_mode?: string
           cancelled_at?: string | null
+          cancelled_by?: string | null
           cleaning_price?: number
           companions?: number
           created_at?: string
@@ -137,6 +139,7 @@ export type Database = {
           base_price?: number
           booking_mode?: string
           cancelled_at?: string | null
+          cancelled_by?: string | null
           cleaning_price?: number
           companions?: number
           created_at?: string

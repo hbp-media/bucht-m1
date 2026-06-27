@@ -1,0 +1,1 @@
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS cancelled_by text CHECK (cancelled_by IN ('user','admin','system'));
