@@ -31,6 +31,8 @@ interface Booking {
   status: string;
   payment_status: string;
   payment_deadline: string | null;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
   email: string;
   last_name: string;
   created_at: string;
