@@ -338,6 +338,15 @@ const BookingSystem = () => {
                         </span>
                       </div>
                       <StepDates spotId={spot.id} range={range} onChange={setRange} mode="custom" />
+                      {nights > 0 && nights < 3 && (
+                        <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm flex items-start gap-2">
+                          <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                            <strong>Mindestaufenthalt 3 Nächte.</strong> Du hast aktuell {nights}{" "}
+                            {nights === 1 ? "Nacht" : "Nächte"} gewählt. Bitte verlängere deinen Zeitraum
+                            auf mindestens 3 Nächte, um die Buchung abschließen zu können.
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Personen */}

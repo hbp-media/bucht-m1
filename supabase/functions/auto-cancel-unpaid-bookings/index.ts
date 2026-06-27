@@ -45,6 +45,7 @@ Deno.serve(async (req) => {
           status: 'rejected',
           payment_status: 'expired',
           cancelled_at: nowIso,
+          cancelled_by: 'system',
         })
         .in('id', ids);
       if (updErr) throw updErr;
@@ -84,6 +85,7 @@ Deno.serve(async (req) => {
         .update({
           status: 'rejected',
           cancelled_at: nowIso,
+          cancelled_by: 'system',
         })
         .in('id', ids);
       if (updErr) throw updErr;
