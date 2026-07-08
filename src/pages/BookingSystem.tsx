@@ -359,7 +359,7 @@ const BookingSystem = () => {
                   </span>
                 )}
               </div>
-              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+              <div className="space-y-2">
                 {spots.map((s) => {
                   const isSel = spot?.id === s.id;
                   return (
