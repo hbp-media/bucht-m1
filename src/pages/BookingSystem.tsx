@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, Minus, Plus, Users, UserPlus, Baby, UtensilsCrossed } from "lucide-react";
+import { Check, Minus, Plus, Users, UserPlus, Baby, UtensilsCrossed } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { differenceInCalendarDays, format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -12,11 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import StepSpot, { FishingSpot } from "@/components/booking/StepSpot";
+import { type FishingSpot } from "@/components/booking/StepSpot";
 import StepDates from "@/components/booking/StepDates";
 import AvailableSpotsForRange from "@/components/booking/AvailableSpotsForRange";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+
 
 import {
   buildPricing,
@@ -38,11 +39,12 @@ const BookingSystem = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [page, setPage] = useState<0 | 1>(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [spots, setSpots] = useState<FishingSpot[]>([]);
   const [spot, setSpot] = useState<FishingSpot | null>(null);
+
   const [range, setRange] = useState<DateRange | undefined>();
   const [persons, setPersons] = useState(1);
   const [companions, setCompanions] = useState(0);
@@ -165,13 +167,27 @@ const BookingSystem = () => {
     !!contact.email.trim() &&
     !!contact.phone.trim();
 
+  // Alle Plätze laden für den Platz-Picker oben
+  useEffect(() => {
+    supabase
+      .from("fishing_spots")
+      .select("*")
+      .eq("active", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        const mapped: FishingSpot[] = (data || []).map((s: any) => ({
+          ...s,
+          accommodation_type: (s.accommodation_type ?? "hut") as any,
+        }));
+        setSpots(mapped);
+      });
+  }, []);
+
   const handleSpotSelect = (s: FishingSpot) => {
     setSpot(s);
     if (persons > s.max_persons) setPersons(s.max_persons);
-    // Automatisch zur nächsten Seite
-    setPage(1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
 
   const toggleExtra = (id: string) => {
     if (extraIds.includes(id)) {
@@ -303,62 +319,98 @@ const BookingSystem = () => {
             <div className="flex items-center justify-center gap-4 mb-4">
               <div className="w-12 h-px bg-accent" />
               <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-                {page === 0 ? "Schritt 1 von 2" : "Schritt 2 von 2"}
+                Buchung
               </span>
               <div className="w-12 h-px bg-accent" />
             </div>
             <h1 className="font-display text-3xl md:text-4xl text-foreground">
-              {page === 0 ? (
-                <>Platz <span className="italic text-primary">wählen</span></>
-              ) : (
-                <>Buchung <span className="italic text-primary">abschließen</span></>
-              )}
+              Buchung <span className="italic text-primary">abschließen</span>
             </h1>
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={page}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}
-            >
-              {page === 0 ? (
-                <StepSpot selectedSpotId={spot?.id ?? null} onSelect={handleSpotSelect} />
-              ) : spot ? (
-                <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
-                  {/* Linke Seite: Kalender + Personen + Extras */}
-                  <div className="space-y-5">
-                    {/* Kalender */}
-                    <div className="bg-card border border-border p-4 md:p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-display text-base text-foreground">Zeitraum</h3>
-                        <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                          Min. 3 Nächte
+          {/* Top: Kalender + Platz-Auswahl */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-start mb-5">
+            {/* Kalender */}
+            <div className="bg-card border border-border p-4 md:p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display text-base text-foreground">Zeitraum</h3>
+                <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                  Min. 3 Nächte
+                </span>
+              </div>
+              <StepDates spotId={spot?.id ?? null} range={range} onChange={setRange} mode="custom" />
+              {nights > 0 && nights < 3 && (
+                <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm">
+                  <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                    <strong>Mindestaufenthalt 3 Nächte.</strong> Du hast aktuell {nights}{" "}
+                    {nights === 1 ? "Nacht" : "Nächte"} gewählt.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Platz-Auswahl (kompakt) */}
+            <div className="bg-card border border-border p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display text-base text-foreground">Platz wählen</h3>
+                {spot && (
+                  <span className="font-body text-[10px] tracking-[0.2em] uppercase text-primary">
+                    {spot.name}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                {spots.map((s) => {
+                  const isSel = spot?.id === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSpotSelect(s)}
+                      className={`w-full text-left p-3 border transition-colors ${
+                        isSel
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-accent/60"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-display text-sm text-foreground">{s.name}</span>
+                        {isSel && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="flex items-center gap-1 font-body text-[10px] text-muted-foreground">
+                          <Users className="w-3 h-3" /> max. {s.max_persons}
+                        </span>
+                        <span className="font-body text-[10px] text-accent tracking-[0.1em] uppercase">
+                          {s.accommodation_type === "caravan" ? "Wohnwagen" : "Hütte"} inkl.
                         </span>
                       </div>
-                      <StepDates spotId={spot.id} range={range} onChange={setRange} mode="custom" />
-                      {nights > 0 && nights < 3 && (
-                        <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm flex items-start gap-2">
-                          <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                            <strong>Mindestaufenthalt 3 Nächte.</strong> Du hast aktuell {nights}{" "}
-                            {nights === 1 ? "Nacht" : "Nächte"} gewählt. Bitte verlängere deinen Zeitraum
-                            auf mindestens 3 Nächte, um die Buchung abschließen zu können.
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    </button>
+                  );
+                })}
+                {spots.length === 0 && (
+                  <p className="font-body text-xs text-muted-foreground">Lade Plätze...</p>
+                )}
+              </div>
+            </div>
+          </div>
 
-                    {/* Extra Fenster: andere freie Plätze im selben Zeitraum */}
-                    <AvailableSpotsForRange
-                      range={range}
-                      currentSpotId={spot.id}
-                      onSelectSpot={(s) => {
-                        setSpot(s);
-                        if (persons > s.max_persons) setPersons(s.max_persons);
-                      }}
-                    />
+          {/* Info: alle Plätze mit Verfügbarkeit im gewählten Zeitraum */}
+          {range?.from && range?.to && nights >= 3 && (
+            <div className="mb-5">
+              <AvailableSpotsForRange
+                range={range}
+                currentSpotId={spot?.id ?? null}
+                onSelectSpot={handleSpotSelect}
+              />
+            </div>
+          )}
+
+          {spot ? (
+            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
+              {/* Linke Seite: Personen + Extras */}
+              <div className="space-y-5">
+
 
 
 
@@ -647,26 +699,16 @@ const BookingSystem = () => {
                       Nach dem Abschicken erhältst du eine E-Mail mit unseren Bankdaten. Anzahlung
                       innerhalb von 24h, sonst wird die Reservierung automatisch storniert.
                     </p>
-                  </div>
-                </div>
-              ) : null}
-            </motion.div>
-          </AnimatePresence>
-
-          {page === 1 && (
-            <div className="mt-8 pt-6 border-t border-border">
-              <button
-                type="button"
-                onClick={() => {
-                  setPage(0);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 font-body text-xs tracking-[0.2em] uppercase border border-border text-foreground hover:border-accent transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Anderen Platz wählen
-              </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-card border border-dashed border-border p-6 text-center">
+              <p className="font-body text-xs text-muted-foreground">
+                Bitte wähle einen Platz, um Personen, Extras und Kontaktdaten festzulegen.
+              </p>
             </div>
           )}
+
 
 
         </div>
