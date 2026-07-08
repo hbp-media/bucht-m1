@@ -38,11 +38,12 @@ const BookingSystem = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [page, setPage] = useState<0 | 1>(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [spots, setSpots] = useState<FishingSpot[]>([]);
   const [spot, setSpot] = useState<FishingSpot | null>(null);
+
   const [range, setRange] = useState<DateRange | undefined>();
   const [persons, setPersons] = useState(1);
   const [companions, setCompanions] = useState(0);
@@ -165,13 +166,27 @@ const BookingSystem = () => {
     !!contact.email.trim() &&
     !!contact.phone.trim();
 
+  // Alle Plätze laden für den Platz-Picker oben
+  useEffect(() => {
+    supabase
+      .from("fishing_spots")
+      .select("*")
+      .eq("active", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        const mapped: FishingSpot[] = (data || []).map((s: any) => ({
+          ...s,
+          accommodation_type: (s.accommodation_type ?? "hut") as any,
+        }));
+        setSpots(mapped);
+      });
+  }, []);
+
   const handleSpotSelect = (s: FishingSpot) => {
     setSpot(s);
     if (persons > s.max_persons) setPersons(s.max_persons);
-    // Automatisch zur nächsten Seite
-    setPage(1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
 
   const toggleExtra = (id: string) => {
     if (extraIds.includes(id)) {
