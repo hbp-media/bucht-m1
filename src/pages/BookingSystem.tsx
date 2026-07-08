@@ -698,26 +698,16 @@ const BookingSystem = () => {
                       Nach dem Abschicken erhältst du eine E-Mail mit unseren Bankdaten. Anzahlung
                       innerhalb von 24h, sonst wird die Reservierung automatisch storniert.
                     </p>
-                  </div>
-                </div>
-              ) : null}
-            </motion.div>
-          </AnimatePresence>
-
-          {page === 1 && (
-            <div className="mt-8 pt-6 border-t border-border">
-              <button
-                type="button"
-                onClick={() => {
-                  setPage(0);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 font-body text-xs tracking-[0.2em] uppercase border border-border text-foreground hover:border-accent transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Anderen Platz wählen
-              </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-card border border-dashed border-border p-6 text-center">
+              <p className="font-body text-xs text-muted-foreground">
+                Bitte wähle einen Platz, um Personen, Extras und Kontaktdaten festzulegen.
+              </p>
             </div>
           )}
+
 
 
         </div>
