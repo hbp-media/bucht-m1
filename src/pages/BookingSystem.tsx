@@ -328,72 +328,25 @@ const BookingSystem = () => {
             </h1>
           </div>
 
-          {/* Top: Kalender + Platz-Auswahl */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-start mb-5">
-            {/* Kalender */}
-            <div className="bg-card border border-border p-4 md:p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-display text-base text-foreground">Zeitraum</h3>
-                <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                  Min. 3 Nächte
+          {/* Kalender (volle Breite) */}
+          <div className="bg-card border border-border p-4 md:p-5 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-base text-foreground">Zeitraum</h3>
+              <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                Min. 3 Nächte
+              </span>
+            </div>
+            <StepDates spotId={spot?.id ?? null} range={range} onChange={setRange} mode="custom" />
+            {nights > 0 && nights < 3 && (
+              <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm">
+                <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                  <strong>Mindestaufenthalt 3 Nächte.</strong> Du hast aktuell {nights}{" "}
+                  {nights === 1 ? "Nacht" : "Nächte"} gewählt.
                 </span>
               </div>
-              <StepDates spotId={spot?.id ?? null} range={range} onChange={setRange} mode="custom" />
-              {nights > 0 && nights < 3 && (
-                <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm">
-                  <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                    <strong>Mindestaufenthalt 3 Nächte.</strong> Du hast aktuell {nights}{" "}
-                    {nights === 1 ? "Nacht" : "Nächte"} gewählt.
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Platz-Auswahl (kompakt) */}
-            <div className="bg-card border border-border p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-display text-base text-foreground">Platz wählen</h3>
-                {spot && (
-                  <span className="font-body text-[10px] tracking-[0.2em] uppercase text-primary">
-                    {spot.name}
-                  </span>
-                )}
-              </div>
-              <div className="space-y-2">
-                {spots.map((s) => {
-                  const isSel = spot?.id === s.id;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => handleSpotSelect(s)}
-                      className={`w-full text-left p-3 border transition-colors ${
-                        isSel
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-accent/60"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-display text-sm text-foreground">{s.name}</span>
-                        {isSel && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-                      </div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="flex items-center gap-1 font-body text-[10px] text-muted-foreground">
-                          <Users className="w-3 h-3" /> max. {s.max_persons}
-                        </span>
-                        <span className="font-body text-[10px] text-accent tracking-[0.1em] uppercase">
-                          {s.accommodation_type === "caravan" ? "Wohnwagen" : "Hütte"} inkl.
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-                {spots.length === 0 && (
-                  <p className="font-body text-xs text-muted-foreground">Lade Plätze...</p>
-                )}
-              </div>
-            </div>
+            )}
           </div>
+
 
           {/* Info: alle Plätze mit Verfügbarkeit im gewählten Zeitraum */}
           {range?.from && range?.to && nights >= 3 && (
