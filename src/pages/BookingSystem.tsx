@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { type FishingSpot } from "@/components/booking/StepSpot";
+import StepSpot, { FishingSpot } from "@/components/booking/StepSpot";
 import StepDates from "@/components/booking/StepDates";
 import AvailableSpotsForRange from "@/components/booking/AvailableSpotsForRange";
 import { Input } from "@/components/ui/input";
@@ -309,7 +309,7 @@ const BookingSystem = () => {
             </div>
             <h1 className="font-display text-3xl md:text-4xl text-foreground">
               {page === 0 ? (
-                <>Zeitraum & <span className="italic text-primary">Platz</span></>
+                <>Platz <span className="italic text-primary">wählen</span></>
               ) : (
                 <>Buchung <span className="italic text-primary">abschließen</span></>
               )}
@@ -325,77 +325,41 @@ const BookingSystem = () => {
               transition={{ duration: 0.25 }}
             >
               {page === 0 ? (
-                <div className="space-y-5">
-                  {/* Kalender (global) */}
-                  <div className="bg-card border border-border p-4 md:p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-display text-base text-foreground">1. Zeitraum wählen</h3>
-                      <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                        Min. 3 Nächte
-                      </span>
-                    </div>
-                    <StepDates spotId={null} range={range} onChange={setRange} mode="custom" />
-                    {nights > 0 && nights < 3 && (
-                      <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm flex items-start gap-2">
-                        <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                          <strong>Mindestaufenthalt 3 Nächte.</strong> Du hast aktuell {nights}{" "}
-                          {nights === 1 ? "Nacht" : "Nächte"} gewählt. Bitte verlängere deinen Zeitraum
-                          auf mindestens 3 Nächte.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Verfügbare Plätze im gewählten Zeitraum */}
-                  {range?.from && range?.to && nights >= 3 ? (
-                    <div>
-                      <div className="flex items-center justify-between mb-2 px-1">
-                        <h3 className="font-display text-base text-foreground">
-                          2. Freien Platz wählen
-                        </h3>
-                      </div>
-                      <AvailableSpotsForRange
-                        range={range}
-                        currentSpotId={spot?.id ?? null}
-                        onSelectSpot={handleSpotSelect}
-                      />
-                    </div>
-                  ) : (
-                    <div className="bg-card border border-dashed border-border p-6 text-center">
-                      <p className="font-body text-xs text-muted-foreground">
-                        Wähle zuerst einen Zeitraum von mindestens 3 Nächten, um verfügbare Plätze zu sehen.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                <StepSpot selectedSpotId={spot?.id ?? null} onSelect={handleSpotSelect} />
               ) : spot ? (
                 <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
-                  {/* Linke Seite: Personen + Extras */}
+                  {/* Linke Seite: Kalender + Personen + Extras */}
                   <div className="space-y-5">
-                    {/* Auswahl-Übersicht mit Bearbeiten */}
-                    <div className="bg-card border border-border p-4 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-0.5">
-                          Deine Auswahl
-                        </p>
-                        <p className="font-display text-base text-foreground truncate">
-                          {spot.name} ·{" "}
-                          {range?.from && range?.to
-                            ? `${format(range.from, "dd.MM.", { locale: de })}–${format(range.to, "dd.MM.yyyy", { locale: de })}`
-                            : ""}
-                        </p>
+                    {/* Kalender */}
+                    <div className="bg-card border border-border p-4 md:p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-display text-base text-foreground">Zeitraum</h3>
+                        <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                          Min. 3 Nächte
+                        </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPage(0);
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }}
-                        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 font-body text-[10px] tracking-[0.2em] uppercase border border-border text-foreground hover:border-accent transition-colors"
-                      >
-                        <ArrowLeft className="w-3 h-3" /> Ändern
-                      </button>
+                      <StepDates spotId={spot.id} range={range} onChange={setRange} mode="custom" />
+                      {nights > 0 && nights < 3 && (
+                        <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm flex items-start gap-2">
+                          <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                            <strong>Mindestaufenthalt 3 Nächte.</strong> Du hast aktuell {nights}{" "}
+                            {nights === 1 ? "Nacht" : "Nächte"} gewählt. Bitte verlängere deinen Zeitraum
+                            auf mindestens 3 Nächte, um die Buchung abschließen zu können.
+                          </span>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Extra Fenster: andere freie Plätze im selben Zeitraum */}
+                    <AvailableSpotsForRange
+                      range={range}
+                      currentSpotId={spot.id}
+                      onSelectSpot={(s) => {
+                        setSpot(s);
+                        if (persons > s.max_persons) setPersons(s.max_persons);
+                      }}
+                    />
+
 
 
 
@@ -688,6 +652,22 @@ const BookingSystem = () => {
               ) : null}
             </motion.div>
           </AnimatePresence>
+
+          {page === 1 && (
+            <div className="mt-8 pt-6 border-t border-border">
+              <button
+                type="button"
+                onClick={() => {
+                  setPage(0);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 font-body text-xs tracking-[0.2em] uppercase border border-border text-foreground hover:border-accent transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Anderen Platz wählen
+              </button>
+            </div>
+          )}
+
 
         </div>
       </section>
