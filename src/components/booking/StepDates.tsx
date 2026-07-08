@@ -25,8 +25,39 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
       setLoading(true);
       const today = new Date().toISOString().split("T")[0];
 
+      // Kein Spot gewählt → globale Ansicht: nur Tage sperren, an denen ALLE Plätze belegt sind.
       if (!spotId) {
-        setBlockedDates([]);
+        const [spotsRes, blockedRes, bookingsRes] = await Promise.all([
+          supabase.from("fishing_spots").select("id").eq("active", true),
+          supabase.from("blocked_dates").select("spot_id, date").gte("date", today),
+          supabase
+            .from("bookings")
+            .select("spot_id, start_date, end_date, status")
+            .in("status", ["pending", "approved", "paid"])
+            .gte("end_date", today),
+        ]);
+
+        const totalSpots = spotsRes.data?.length ?? 0;
+        const perDay = new Map<string, Set<string>>();
+        const addBlock = (date: string, spot: string) => {
+          if (!perDay.has(date)) perDay.set(date, new Set());
+          perDay.get(date)!.add(spot);
+        };
+        blockedRes.data?.forEach((b: any) => addBlock(b.date, b.spot_id));
+        bookingsRes.data?.forEach((b: any) => {
+          const cur = new Date(b.start_date);
+          const end = new Date(b.end_date);
+          while (cur <= end) {
+            addBlock(format(cur, "yyyy-MM-dd"), b.spot_id);
+            cur.setDate(cur.getDate() + 1);
+          }
+        });
+
+        const blocked: Date[] = [];
+        perDay.forEach((set, dateStr) => {
+          if (totalSpots > 0 && set.size >= totalSpots) blocked.push(new Date(dateStr));
+        });
+        setBlockedDates(blocked);
         setPendingDates([]);
         setLoading(false);
         return;
@@ -54,8 +85,6 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
         const start = new Date(b.start_date);
         const end = new Date(b.end_date);
         const cur = new Date(start);
-        // Pending UND approved/paid blockieren beide den Platz komplett.
-        // Pending wird zusätzlich visuell gelb markiert.
         const isPending = b.status === "pending";
         while (cur <= end) {
           blocked.push(new Date(cur));
@@ -70,6 +99,7 @@ const StepDates = ({ spotId, range, onChange, mode = "custom" }: StepDatesProps)
     };
     load();
   }, [spotId]);
+
 
   const today = startOfDay(new Date());
   const nights = range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
