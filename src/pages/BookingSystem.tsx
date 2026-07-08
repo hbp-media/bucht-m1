@@ -14,6 +14,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StepSpot, { FishingSpot } from "@/components/booking/StepSpot";
 import StepDates from "@/components/booking/StepDates";
+import AvailableSpotsForRange from "@/components/booking/AvailableSpotsForRange";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -348,6 +349,17 @@ const BookingSystem = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* Verfügbare Plätze im gewählten Zeitraum */}
+                    <AvailableSpotsForRange
+                      range={range}
+                      currentSpotId={spot.id}
+                      onSelectSpot={(s) => {
+                        setSpot(s);
+                        if (persons > s.max_persons) setPersons(s.max_persons);
+                      }}
+                    />
+
 
                     {/* Personen */}
                     <div className="bg-card border border-border p-5">
