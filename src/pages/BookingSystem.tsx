@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import StepSpot, { FishingSpot } from "@/components/booking/StepSpot";
+import { type FishingSpot } from "@/components/booking/StepSpot";
 import StepDates from "@/components/booking/StepDates";
 import AvailableSpotsForRange from "@/components/booking/AvailableSpotsForRange";
 import { Input } from "@/components/ui/input";
