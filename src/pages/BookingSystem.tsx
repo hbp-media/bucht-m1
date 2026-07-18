@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Check, Minus, Plus, Users, UserPlus, Baby, UtensilsCrossed } from "lucide-react";
@@ -38,6 +38,7 @@ const BookingSystem = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const bookingDetailsRef = useRef<HTMLDivElement | null>(null);
 
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -186,6 +187,9 @@ const BookingSystem = () => {
   const handleSpotSelect = (s: FishingSpot) => {
     setSpot(s);
     if (persons > s.max_persons) setPersons(s.max_persons);
+    window.setTimeout(() => {
+      bookingDetailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
 
@@ -360,7 +364,7 @@ const BookingSystem = () => {
           )}
 
           {spot ? (
-            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
+            <div ref={bookingDetailsRef} className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
               {/* Linke Seite: Personen + Extras */}
               <div className="space-y-5">
 
