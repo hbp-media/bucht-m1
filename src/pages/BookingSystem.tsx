@@ -345,15 +345,22 @@ const BookingSystem = () => {
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display text-base text-foreground">Zeitraum</h3>
               <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                Min. 3 Nächte
+                Min. 3 Nächte · Fr–So erlaubt
               </span>
             </div>
             <StepDates spotId={spot?.id ?? null} range={range} onChange={setRange} mode="custom" />
-            {nights > 0 && nights < 3 && (
+            {nights > 0 && nights < 3 && !isWeekendException && (
               <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm">
                 <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                  <strong>Mindestaufenthalt 3 Nächte.</strong> Du hast aktuell {nights}{" "}
+                  <strong>Mindestaufenthalt 3 Nächte.</strong> Ausnahme: <strong>Freitag bis Sonntag</strong> (2 Nächte) am Wochenende ist erlaubt. Du hast aktuell {nights}{" "}
                   {nights === 1 ? "Nacht" : "Nächte"} gewählt.
+                </span>
+              </div>
+            )}
+            {isWeekendException && (
+              <div className="mt-3 p-3 border border-primary/40 bg-primary/5 rounded-sm">
+                <span className="font-body text-xs text-foreground leading-relaxed">
+                  <strong>Wochenend-Aufenthalt</strong> (Fr–So, 2 Nächte) – erlaubt.
                 </span>
               </div>
             )}
@@ -361,7 +368,7 @@ const BookingSystem = () => {
 
 
           {/* Info: alle Plätze mit Verfügbarkeit im gewählten Zeitraum */}
-          {range?.from && range?.to && nights >= 3 && (
+          {range?.from && range?.to && meetsMinStay && (
             <div className="mb-5">
               <AvailableSpotsForRange
                 range={range}
