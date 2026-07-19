@@ -124,6 +124,14 @@ const BookingSystem = () => {
 
   const nights =
     range?.from && range?.to ? differenceInCalendarDays(range.to, range.from) : 0;
+  // Ausnahme: Wochenende Fr → So (2 Nächte) ist erlaubt
+  const isWeekendException =
+    !!range?.from &&
+    !!range?.to &&
+    nights === 2 &&
+    getDay(range.from) === 5 &&
+    getDay(range.to) === 0;
+  const meetsMinStay = nights >= 3 || isWeekendException;
   const totalPersons = persons + companions + companionsKids;
 
   // Hütte ist immer dabei: Unterkunftstyp = Spot, Personen = alle
