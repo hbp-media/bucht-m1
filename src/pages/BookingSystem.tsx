@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Check, Minus, Plus, Users, UserPlus, Baby, UtensilsCrossed } from "lucide-react";
 import { DateRange } from "react-day-picker";
-import { differenceInCalendarDays, format } from "date-fns";
+import { differenceInCalendarDays, format, getDay } from "date-fns";
 import { de } from "date-fns/locale";
 
 import { useAuth } from "@/hooks/useAuth";
