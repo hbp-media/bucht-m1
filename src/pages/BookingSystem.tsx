@@ -168,7 +168,11 @@ const BookingSystem = () => {
     !!spot &&
     !!range?.from &&
     !!range?.to &&
-    nights >= 3 &&
+  const canSubmit =
+    !!spot &&
+    !!range?.from &&
+    !!range?.to &&
+    meetsMinStay &&
     persons >= 1 &&
     totalPersons <= 4 &&
     !!contact.first_name.trim() &&
