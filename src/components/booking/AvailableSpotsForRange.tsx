@@ -27,6 +27,21 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
   const [spots, setSpots] = useState<SpotAvailability[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailSpot, setDetailSpot] = useState<SpotAvailability | null>(null);
+  const [imageIdx, setImageIdx] = useState(0);
+
+  const detailImages = detailSpot
+    ? (Array.from(
+        new Set(
+          [detailSpot.image_url, ...(detailSpot.gallery_urls ?? [])].filter(
+            Boolean,
+          ),
+        ),
+      ) as string[])
+    : [];
+
+  useEffect(() => {
+    setImageIdx(0);
+  }, [detailSpot?.id]);
 
   useEffect(() => {
     if (!range?.from || !range?.to) {

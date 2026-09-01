@@ -14,6 +14,7 @@ export interface FishingSpot {
   max_persons: number;
   features: string[];
   image_url: string | null;
+  gallery_urls: string[] | null;
   active: boolean;
   sort_order: number;
   accommodation_type: AccommodationType;
