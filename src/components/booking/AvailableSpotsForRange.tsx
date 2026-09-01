@@ -27,6 +27,21 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
   const [spots, setSpots] = useState<SpotAvailability[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailSpot, setDetailSpot] = useState<SpotAvailability | null>(null);
+  const [imageIdx, setImageIdx] = useState(0);
+
+  const detailImages = detailSpot
+    ? (Array.from(
+        new Set(
+          [detailSpot.image_url, ...(detailSpot.gallery_urls ?? [])].filter(
+            Boolean,
+          ),
+        ),
+      ) as string[])
+    : [];
+
+  useEffect(() => {
+    setImageIdx(0);
+  }, [detailSpot?.id]);
 
   useEffect(() => {
     if (!range?.from || !range?.to) {
@@ -172,13 +187,38 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
                 </DialogDescription>
               </DialogHeader>
 
-              {detailSpot.image_url ? (
-                <div className="aspect-video bg-muted overflow-hidden">
-                  <img
-                    src={detailSpot.image_url}
-                    alt={detailSpot.name}
-                    className="w-full h-full object-cover"
-                  />
+              {detailImages.length > 0 ? (
+                <div>
+                  <div className="aspect-video bg-muted overflow-hidden">
+                    <img
+                      src={detailImages[Math.min(imageIdx, detailImages.length - 1)]}
+                      alt={detailSpot.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {detailImages.length > 1 && (
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {detailImages.map((img, i) => (
+                        <button
+                          key={img}
+                          type="button"
+                          onClick={() => setImageIdx(i)}
+                          aria-label={`Foto ${i + 1}`}
+                          className={`aspect-video bg-muted overflow-hidden border-2 transition-colors ${
+                            i === imageIdx
+                              ? "border-primary"
+                              : "border-transparent hover:border-accent/60"
+                          }`}
+                        >
+                          <img
+                            src={img}
+                            alt={`${detailSpot.name} Foto ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="aspect-video bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
