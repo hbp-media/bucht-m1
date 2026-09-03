@@ -17,6 +17,8 @@ import StepDates from "@/components/booking/StepDates";
 import AvailableSpotsForRange from "@/components/booking/AvailableSpotsForRange";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import lageplanImg from "@/assets/lageplan.jpg";
+
 
 
 import {
@@ -385,6 +387,28 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
           </div>
 
 
+          {/* Lageplan */}
+          <div className="bg-card border border-border p-4 md:p-5 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-base text-foreground">Lageplan</h3>
+              <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                9 Plätze
+              </span>
+            </div>
+            <img
+              src={lageplanImg}
+              alt="Lageplan der Bucht M1 mit den nummerierten Angelplätzen 1 bis 9, Zufahrt und Parkplatz"
+              loading="lazy"
+              width={1536}
+              height={1024}
+              className="w-full h-auto border border-border/60"
+            />
+            <p className="font-body text-[11px] text-muted-foreground mt-2">
+              Schematische Übersicht – die Nummern entsprechen den buchbaren Plätzen.
+            </p>
+          </div>
+
+
           {/* Info: alle Plätze mit Verfügbarkeit im gewählten Zeitraum */}
           {range?.from && range?.to && meetsMinStay && (
             <div className="mb-5">
@@ -465,7 +489,7 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
                     <div className="bg-card border border-border p-5">
                       <h3 className="font-display text-base text-foreground mb-4">Extras</h3>
 
-                      {/* All Inclusive */}
+                      {/* All you can Eat (optional, nicht vorausgewählt) */}
                       <button
                         type="button"
                         onClick={() => setAllInclusive(!allInclusive)}
@@ -484,15 +508,30 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5">
                               <UtensilsCrossed className="w-3.5 h-3.5 text-accent" strokeWidth={1.6} />
-                              <span className="font-body text-sm text-foreground font-medium">All Inclusive</span>
+                              <span className="font-body text-sm text-foreground font-medium">All you can Eat</span>
                             </div>
-                            <span className="font-body text-xs text-accent">€15 / P / 24h</span>
+                            <span className="font-body text-xs text-accent">€15 / Person &amp; Nacht</span>
                           </div>
                           <p className="font-body text-[11px] text-muted-foreground mt-0.5">
-                            Frühstück, Abendessen & Groundstick für alle.
+                            Optional – Frühstück & Abendessen. Wird pro Person und Nacht berechnet
+                            {persons + companions > 0 && nights > 0 && (
+                              <>
+                                {" "}
+                                ({persons + companions} × {nights} Nächte ={" "}
+                                €{(persons + companions) * nights * 15})
+                              </>
+                            )}
+                            . Kinder bis 10 Jahre kostenlos.
                           </p>
                         </div>
                       </button>
+
+                      <p className="font-body text-[11px] text-muted-foreground leading-relaxed mb-3">
+                        <strong>Partikelmix</strong> ist direkt vor Ort erhältlich und wird nicht
+                        vorab gebucht – sprich uns einfach bei der Ankunft an. Eine{" "}
+                        <strong>Gasflasche</strong> kannst du unten dazubuchen.
+                      </p>
+
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {allExtras.map((extra) => {
@@ -641,7 +680,7 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
                           />
                         )}
                         {pricing.allInclusivePrice > 0 && (
-                          <PriceRow label="All Inclusive" value={pricing.allInclusivePrice} />
+                          <PriceRow label="All you can Eat" value={pricing.allInclusivePrice} />
                         )}
                         {pricing.extras.map((e) => (
                           <PriceRow
