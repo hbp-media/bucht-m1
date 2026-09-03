@@ -387,6 +387,28 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
           </div>
 
 
+          {/* Lageplan */}
+          <div className="bg-card border border-border p-4 md:p-5 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-base text-foreground">Lageplan</h3>
+              <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                9 Plätze
+              </span>
+            </div>
+            <img
+              src={lageplanImg}
+              alt="Lageplan der Bucht M1 mit den nummerierten Angelplätzen 1 bis 9, Zufahrt und Parkplatz"
+              loading="lazy"
+              width={1536}
+              height={1024}
+              className="w-full h-auto border border-border/60"
+            />
+            <p className="font-body text-[11px] text-muted-foreground mt-2">
+              Schematische Übersicht – die Nummern entsprechen den buchbaren Plätzen.
+            </p>
+          </div>
+
+
           {/* Info: alle Plätze mit Verfügbarkeit im gewählten Zeitraum */}
           {range?.from && range?.to && meetsMinStay && (
             <div className="mb-5">
