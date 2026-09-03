@@ -71,6 +71,7 @@ interface BookingDetails {
   total_price: number;
   extras: any;
   spot_name: string;
+  booking_number: string | null;
 }
 
 const fetchBooking = async (
@@ -337,31 +338,45 @@ const fmtDateTime = (s: string) =>
 const depositRequestEmail = (b: BookingDetails, s: PaySettings) => {
   const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
   const deposit = Math.round(b.total_price * s.deposit_percent) / 100;
-  const deadline = new Date(Date.now() + (s.deposit_deadline_hours || 24) * 3600_000);
-  const ref = `Bucht M1 / ${b.last_name} / ${b.id.slice(0, 8)}`;
+  const deadlineHours = s.deposit_deadline_hours || 168;
+  const deadline = new Date(Date.now() + deadlineHours * 3600_000);
+  const deadlineDays = Math.round(deadlineHours / 24);
+  const start = new Date(b.start_date);
+  const dd = String(start.getDate()).padStart(2, "0");
+  const mm = String(start.getMonth() + 1).padStart(2, "0");
+  const ref = `${b.booking_number ?? "BM1"} ${dd}.${mm}/${start.getFullYear()}`;
   return {
-    subject: `Anzahlung für deine Buchung – €${deposit.toFixed(2)}`,
+    subject: `Vorreservierung ${b.booking_number ?? ""} – Anzahlung €${deposit.toFixed(2)}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Buchung freigegeben ✓</h1>
+        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Vorreservierung bestätigt ✓</h1>
         <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
         <p style="font-size:14px;line-height:1.6;">
-          deine Anfrage für <strong>${b.spot_name}</strong> (${dateRange}) wurde geprüft und freigegeben.
-          Damit wir die Reservierung verbindlich sichern können, bitten wir dich um eine
-          <strong>Anzahlung von €${deposit.toFixed(2)} (${s.deposit_percent}%)</strong> innerhalb von
-          <strong>${s.deposit_deadline_hours} Stunden</strong>. Die Restzahlung ist
-          ${s.full_payment_days_before} Tage vor Anreise fällig.
+          dein Platz <strong>${b.spot_name}</strong> (${dateRange}) ist für dich
+          <strong>vorreserviert</strong>. Damit die Reservierung fix wird, überweise bitte die
+          <strong>Anzahlung von €${deposit.toFixed(2)} (${s.deposit_percent} %)</strong> innerhalb von
+          <strong>${deadlineDays} Tagen</strong>. Der Restbetrag wird <strong>vor Ort bei der Anreise</strong> bezahlt.
         </p>
         ${renderBankBlock(s, deposit, ref, fmtDateTime(deadline.toISOString()))}
+        <p style="font-size:13px;line-height:1.6;background:#f6f4ee;border-left:3px solid #6f7e44;padding:12px 14px;">
+          <strong>Verwendungszweck:</strong> ${ref}<br />
+          Bitte genau so angeben, sonst können wir die Zahlung nicht zuordnen.
+        </p>
         <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Gesamtaufstellung</h3>
         ${renderPriceTable(b)}
-        <p style="font-size:12px;line-height:1.6;color:#888;margin-top:24px;">
-          Wichtig: Bitte gib den Verwendungszweck genau wie oben angegeben an, sonst können wir die Zahlung nicht zuordnen.
-          Geht die Anzahlung nicht rechtzeitig ein, wird die Reservierung automatisch storniert.
+        <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Anfahrt</h3>
+        <p style="font-size:13px;line-height:1.6;">
+          Bucht M1 · H-9221 Level, Ungarn.<br />
+          Route und Wegbeschreibung: <a href="https://buchtm1.purtuc.at/anfahrt" style="color:#6f7e44;">buchtm1.purtuc.at/anfahrt</a>
         </p>
-        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
+        <p style="font-size:12px;line-height:1.6;color:#888;margin-top:24px;">
+          Hinweis: Die Anzahlung wird in keinem Fall rückerstattet. Geht die Anzahlung nicht
+          innerhalb von ${deadlineDays} Tagen ein, wird die Vorreservierung automatisch aufgehoben
+          und der Platz wieder freigegeben.
+        </p>
+        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · Wolfgang: +43 699 130 35 163</p>
       </div>`,
-    text: `Hallo ${b.first_name}, bitte überweise eine Anzahlung von €${deposit.toFixed(2)} an ${s.bank_holder} IBAN ${s.iban} BIC ${s.bic}. Verwendungszweck: ${ref}. Frist: ${fmtDateTime(deadline.toISOString())}.`,
+    text: `Hallo ${b.first_name}, dein Platz ist vorreserviert. Bitte überweise die Anzahlung von €${deposit.toFixed(2)} an ${s.bank_holder}, IBAN ${s.iban}, BIC ${s.bic}. Verwendungszweck: ${ref}. Frist: ${fmtDateTime(deadline.toISOString())}. Restbetrag vor Ort. Die Anzahlung wird nicht rückerstattet.`,
   };
 };
 
@@ -379,12 +394,11 @@ const depositReceivedEmail = (b: BookingDetails, s: PaySettings) => {
           Die Reservierung ist nun verbindlich gesichert.
         </p>
         <p style="font-size:14px;line-height:1.6;">
-          Die <strong>Restzahlung von €${finalDue.toFixed(2)}</strong> wird ${s.full_payment_days_before} Tage vor Anreise fällig –
-          du erhältst rechtzeitig eine separate E-Mail mit den Bankdaten.
+          Der <strong>Restbetrag von €${finalDue.toFixed(2)}</strong> wird <strong>vor Ort bei der Anreise</strong> bezahlt.
         </p>
         <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
       </div>`,
-    text: `Hallo ${b.first_name}, deine Anzahlung für ${b.spot_name} (${dateRange}) ist eingegangen. Restzahlung €${finalDue.toFixed(2)} ${s.full_payment_days_before} Tage vor Anreise.`,
+    text: `Hallo ${b.first_name}, deine Anzahlung für ${b.spot_name} (${dateRange}) ist eingegangen. Restbetrag €${finalDue.toFixed(2)} vor Ort bei der Anreise.`,
   };
 };
 
@@ -616,7 +630,7 @@ Deno.serve(async (req) => {
         bank_holder: settings?.bank_holder ?? "",
         iban: settings?.iban ?? "",
         bic: settings?.bic ?? "",
-        deposit_deadline_hours: settings?.deposit_deadline_hours ?? 24,
+        deposit_deadline_hours: settings?.deposit_deadline_hours ?? 168,
         deposit_percent: settings?.deposit_percent ?? 50,
         full_payment_days_before: settings?.full_payment_days_before ?? 14,
         cancellation_days_before: settings?.cancellation_days_before ?? 14,
