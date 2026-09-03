@@ -67,6 +67,7 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [seen, setSeen] = useState<Record<string, number>>({});
+  const [manualOpen, setManualOpen] = useState(false);
 
   const loadCounts = async () => {
     const [pendingRes, approvedUnpaidRes, depositPaidRes, paidRes, cancelledRes] = await Promise.all([
