@@ -22,13 +22,13 @@
 - [x] Alleinangler +15 €/Tag
 - [x] Kinder <10 = 0 €
 - [x] Extra "Hund" +10 € einmalig
-- [ ] All-inclusive optional (nicht vorausgewählt), umbenannt "All you can Eat"
+- [x] All-inclusive optional (nicht vorausgewählt), umbenannt "All you can Eat" (pro Person & Nacht)
 - [x] Partikelmix: nur Hinweistext, kein Extra
 - [x] Platz 4 & 5: max 2 Personen, keine Begleitpersonen
 
 ## Phase 4 – Plätze & Ausstattung
 - [ ] Ausstattungs-Icons: Strom, TV, Klima, Heizung, Terrasse, Sitzmöglichkeit, Steg, Sanitär
-- [ ] Lageplan-Bild bei Platzauswahl (Bild fehlt noch vom Kunden)
+- [x] Lageplan-Bild bei Platzauswahl (schematisch, ersetzbar durch Kundenfoto)
 - [ ] Foto + Beschreibung je Platz; Platz 3 "Mit Hütte"; Stockbetten-Hinweis außer Platz 3/4
 
 ## Phase 5 – E-Mails
