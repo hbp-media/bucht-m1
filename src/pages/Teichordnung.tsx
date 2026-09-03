@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import { useTranslation } from "react-i18next";
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import teichordnungHero from "@/assets/teichordnung-hero.jpg";
@@ -31,70 +32,15 @@ const fadeUp = {
   }),
 };
 
-const generalRules = [
-  {
-    icon: Fish,
-    title: "Hakenpflicht",
-    text: "Ausschließlich Mikro-Widerhaken verwenden. Haken nur mit Zange aus dem Fischmaul entfernen.",
-  },
-  {
-    icon: Ruler,
-    title: "Schnurstärke",
-    text: "Hauptschnur ab 0,33 mm Mono. Mindestens 20 m Vorfach in 0,50 mm Mono vorspannen. Nur Montagen mit gesichertem Bleiverlust erlaubt.",
-  },
-  {
-    icon: Scale,
-    title: "Wiegen & Zurücksetzen",
-    text: "Fische nur in der Wiegeschlinge (110 cm) aus dem Wasser heben, wiegen und zurücksetzen – immer über der Carp Cradle. Flossen dürfen nicht geknickt werden.",
-  },
-  {
-    icon: Droplets,
-    title: "Desinfektion",
-    text: "Klinikum zur Wunddesinfektion der Fische ist vorgeschrieben.",
-  },
-  {
-    icon: Anchor,
-    title: "Angeln sichern",
-    text: "Beim Verlassen des Platzes müssen alle Angeln eingezogen werden.",
-  },
-  {
-    icon: Trash2,
-    title: "Sauberkeit",
-    text: "Der Angelplatz ist sauber zu hinterlassen. Müllentsorgung durch uns ist kostenpflichtig. Bitte die vorgesehenen Toiletten nutzen.",
-  },
-  {
-    icon: MessageSquareWarning,
-    title: "Aufsicht & Anweisungen",
-    text: "Den Anweisungen des Aufsehers ist jederzeit Folge zu leisten.",
-  },
-];
-
-const allowed = [
-  { icon: Check, text: "Angeln mit bis zu 3 Ruten" },
-  { icon: Check, text: "Nachtfischen erlaubt" },
-  { icon: Check, text: "Fischen, solange die Anlage eisfrei ist" },
-  { icon: Check, text: "Drillen vom Boot nur im Notfall" },
-  { icon: Check, text: "Fotos nur kniend über der Carp Cradle oder im Wasser" },
-  { icon: Check, text: "Auslegen mit Boot oder Futterboot (Desinfektion durch uns)" },
-  { icon: Check, text: "Nur Stabbojen erlaubt" },
-  { icon: Check, text: "Karpfenköder nur mit Haarmontage" },
-  { icon: Check, text: "Nur unsere Partikel zum Anfüttern" },
-  { icon: Check, text: "Schirme & Pavillons ausschließlich in Grün" },
-  { icon: Check, text: "Gasgrill erlaubt" },
-];
-
-const forbidden = [
-  { icon: X, text: "Keine Fischentnahme – reines Catch & Release" },
-  { icon: X, text: "Geflochtene Haupt- und Schlagschnüre verboten" },
-  { icon: X, text: "Kein eigener Motor, Kescher, Carp Cradle oder Wiegesack" },
-  { icon: X, text: "Fische nicht ins Boot heben – im Kescher seitlich ans Ufer bringen" },
-  { icon: X, text: "Fische niemals auf den Bauch legen" },
-  { icon: X, text: "Einsacken & Hältern ausnahmslos verboten – sofort versorgen und zurücksetzen" },
-  { icon: X, text: "Kein Fischen bei übermäßigem Alkoholkonsum" },
-  { icon: X, text: "Holzkohlegrill und offenes Feuer verboten" },
-];
+const ruleIcons = [Fish, Ruler, Scale, Droplets, Anchor, Trash2, MessageSquareWarning];
 
 const Teichordnung = () => {
+  const { t } = useTranslation();
+  const generalRules = (t("rules.general", { returnObjects: true }) as { title: string; text: string }[]).map(
+    (r, i) => ({ ...r, icon: ruleIcons[i] ?? Info }),
+  );
+  const allowed = t("rules.allowed", { returnObjects: true }) as string[];
+  const forbidden = t("rules.forbidden", { returnObjects: true }) as string[];
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -132,15 +78,14 @@ const Teichordnung = () => {
               <div className="flex items-center gap-4 mb-5">
                 <div className="w-8 h-px bg-accent" />
                 <span className="font-body text-[11px] tracking-[0.4em] uppercase text-accent/90">
-                  Bucht M1
+                  {t("rules.eyebrow")}
                 </span>
               </div>
               <h1 className="font-display text-3xl md:text-5xl text-white/95 mb-3 drop-shadow-sm">
-                Teichordnung
+                {t("rules.title")}
               </h1>
               <p className="font-body text-white/70 text-sm md:text-base max-w-xl leading-relaxed">
-                Allgemeine Informationen & Regeln ab 2024 – für ein respektvolles
-                Miteinander und den Schutz unseres Gewässers.
+{t("rules.intro")}
               </p>
             </motion.div>
           </div>
@@ -162,13 +107,10 @@ const Teichordnung = () => {
             <AlertTriangle className="text-accent shrink-0 mt-0.5" size={22} />
             <div>
               <p className="font-body text-sm font-semibold text-foreground mb-1">
-                Wichtiger Hinweis
+{t("rules.noticeTitle")}
               </p>
               <p className="font-body text-sm text-muted-foreground leading-relaxed">
-                Anzahlungen werden nicht rückerstattet. Bei Regelverstößen,
-                Fischdiebstahl oder Vandalismus wird die Fischerlaubnis sofort
-                und ohne Rückerstattung entzogen. Zivilrechtliche Schritte
-                bleiben vorbehalten.
+{t("rules.noticeText")}
               </p>
             </div>
           </div>
@@ -184,7 +126,7 @@ const Teichordnung = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            Allgemeine Regeln
+{t("rules.generalTitle")}
           </motion.h2>
           <div className="grid gap-4 md:grid-cols-2">
             {generalRules.map((rule, i) => (
@@ -233,7 +175,7 @@ const Teichordnung = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent flex items-end p-6">
             <p className="font-display text-xl md:text-2xl text-foreground">
-              Catch & Release – Respekt für jeden Fisch
+{t("rules.banner")}
             </p>
           </div>
         </motion.div>
@@ -254,7 +196,7 @@ const Teichordnung = () => {
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                 <Check size={18} className="text-primary" />
               </div>
-              <h2 className="font-display text-xl text-foreground">Erlaubt</h2>
+              <h2 className="font-display text-xl text-foreground">{t("rules.allowedTitle")}</h2>
             </div>
             <ul className="divide-y divide-border/30">
               {allowed.map((item, i) => (
@@ -267,7 +209,7 @@ const Teichordnung = () => {
                     className="text-primary shrink-0 mt-0.5"
                     strokeWidth={2.5}
                   />
-                  <span>{item.text}</span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -285,9 +227,7 @@ const Teichordnung = () => {
               <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center">
                 <X size={18} className="text-destructive" />
               </div>
-              <h2 className="font-display text-xl text-foreground">
-                Nicht erlaubt
-              </h2>
+<h2 className="font-display text-xl text-foreground">{t("rules.forbiddenTitle")}</h2>
             </div>
             <ul className="divide-y divide-border/30">
               {forbidden.map((item, i) => (
@@ -300,7 +240,7 @@ const Teichordnung = () => {
                     className="text-destructive shrink-0 mt-0.5"
                     strokeWidth={2.5}
                   />
-                  <span>{item.text}</span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -321,11 +261,10 @@ const Teichordnung = () => {
             <Info className="text-muted-foreground shrink-0 mt-0.5" size={20} />
             <div>
               <p className="font-body text-sm font-semibold text-foreground mb-1">
-                Haftungsausschluss
+{t("rules.liabilityTitle")}
               </p>
               <p className="font-body text-sm text-muted-foreground leading-relaxed">
-                Für Schäden oder Unfälle jeglicher Art wird keine Haftung
-                übernommen. Eltern haften für ihre Kinder.
+{t("rules.liabilityText")}
               </p>
             </div>
           </div>

@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import { Phone, Mail } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const ContactSection = () => {
+  const { t } = useTranslation();
+
   return (
     <section id="kontakt" className="relative py-24 md:py-32 bg-background">
       <div className="max-w-7xl mx-auto px-8 md:px-16 lg:px-24">
@@ -15,7 +18,7 @@ const ContactSection = () => {
         >
           <div className="w-12 h-px bg-accent" />
           <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-            Kontakt
+{t("contact.eyebrow")}
           </span>
         </motion.div>
 
@@ -26,9 +29,9 @@ const ContactSection = () => {
           transition={{ duration: 0.8, delay: 0.1 }}
           viewport={{ once: true, margin: "-80px" }}
         >
-          Wir freuen uns
+{t("contact.headline1")}
           <br />
-          <span className="italic text-primary">auf dich.</span>
+          <span className="italic text-primary">{t("contact.headline2")}</span>
         </motion.h2>
 
         {/* Contact cards */}
@@ -50,7 +53,7 @@ const ContactSection = () => {
               </svg>
             </div>
             <div>
-              <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Social Media</span>
+              <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground">{t("contact.social")}</span>
               <p className="font-display text-lg text-foreground mt-1 group-hover:text-primary transition-colors duration-300">Facebook</p>
             </div>
           </motion.a>
@@ -68,7 +71,7 @@ const ContactSection = () => {
               <Phone className="w-5 h-5 text-primary group-hover:text-accent transition-colors duration-300" strokeWidth={1.5} />
             </div>
             <div>
-              <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Telefon · Wolfgang</span>
+              <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground">{t("contact.phoneLabel")}</span>
               <p className="font-display text-lg text-foreground mt-1 group-hover:text-primary transition-colors duration-300">+43 699 130 35 163</p>
             </div>
           </motion.a>
@@ -86,7 +89,7 @@ const ContactSection = () => {
               <Mail className="w-5 h-5 text-primary group-hover:text-accent transition-colors duration-300" strokeWidth={1.5} />
             </div>
             <div>
-              <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground">E-Mail</span>
+              <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground">{t("contact.emailLabel")}</span>
               <p className="font-display text-lg text-foreground mt-1 group-hover:text-primary transition-colors duration-300">info@buchtm1.at</p>
             </div>
           </motion.a>
