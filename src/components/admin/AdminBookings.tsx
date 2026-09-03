@@ -152,6 +152,15 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
 
   return (
     <div>
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => setManualOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-body text-[11px] tracking-[0.2em] uppercase hover:opacity-90 transition-opacity"
+        >
+          <Plus className="w-3.5 h-3.5" /> Buchung manuell anlegen
+        </button>
+      </div>
+
       {/* Filter */}
       <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
         {STATUS_FILTERS.map((f) => {
