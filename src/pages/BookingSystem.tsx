@@ -465,7 +465,7 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
                     <div className="bg-card border border-border p-5">
                       <h3 className="font-display text-base text-foreground mb-4">Extras</h3>
 
-                      {/* All Inclusive */}
+                      {/* All you can Eat (optional, nicht vorausgewählt) */}
                       <button
                         type="button"
                         onClick={() => setAllInclusive(!allInclusive)}
@@ -484,15 +484,30 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5">
                               <UtensilsCrossed className="w-3.5 h-3.5 text-accent" strokeWidth={1.6} />
-                              <span className="font-body text-sm text-foreground font-medium">All Inclusive</span>
+                              <span className="font-body text-sm text-foreground font-medium">All you can Eat</span>
                             </div>
-                            <span className="font-body text-xs text-accent">€15 / P / 24h</span>
+                            <span className="font-body text-xs text-accent">€15 / Person &amp; Nacht</span>
                           </div>
                           <p className="font-body text-[11px] text-muted-foreground mt-0.5">
-                            Frühstück, Abendessen & Groundstick für alle.
+                            Optional – Frühstück & Abendessen. Wird pro Person und Nacht berechnet
+                            {persons + companions > 0 && nights > 0 && (
+                              <>
+                                {" "}
+                                ({persons + companions} × {nights} Nächte ={" "}
+                                €{(persons + companions) * nights * 15})
+                              </>
+                            )}
+                            . Kinder bis 10 Jahre kostenlos.
                           </p>
                         </div>
                       </button>
+
+                      <p className="font-body text-[11px] text-muted-foreground leading-relaxed mb-3">
+                        <strong>Partikelmix</strong> ist direkt vor Ort erhältlich und wird nicht
+                        vorab gebucht – sprich uns einfach bei der Ankunft an. Eine{" "}
+                        <strong>Gasflasche</strong> kannst du unten dazubuchen.
+                      </p>
+
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {allExtras.map((extra) => {
