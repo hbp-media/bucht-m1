@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import { useTranslation } from "react-i18next";
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import anfahrtHero from "@/assets/anfahrt-hero.jpg";
@@ -21,33 +22,14 @@ const fadeUp = {
   }),
 };
 
-const bundesstrasseSteps = [
-  "A4 – Abfahrt Nickelsdorf nehmen",
-  "Richtung Ungarn über den Grenzübergang Nickelsdorf fahren",
-  "Durch Hegyeshalom durchfahren",
-  "An der nächsten Kreuzung links Richtung Mosonmagyaróvár abbiegen",
-  "Durch Levél geradeaus weiterfahren",
-  "70 m vor der OMV-Tankstelle rechts in die Gasse Richtung Mosonszolnok einbiegen",
-  "Über den Bahnübergang fahren",
-  "Direkt nach der Brücke links abbiegen",
-  "Dem Feldweg bis zur Einfahrt folgen",
-];
-
-const autobahnSteps = [
-  "Abfahrt Mosonmagyaróvár nehmen (Vignettenpflicht beachten!)",
-  "Immer geradeaus weiterfahren",
-  "Durch Levél durchfahren",
-  "70 m vor der OMV-Tankstelle rechts Richtung Mosonszolnok abbiegen",
-  "Über den Bahnübergang fahren",
-  "Direkt nach der Brücke links abbiegen",
-  "Dem Feldweg bis zur Einfahrt folgen",
-];
-
 const MAPS_EMBED_URL =
   "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2693.5!2d17.2152559!3d47.8694931!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x476c7790e1bc009f%3A0x1198416a80da232f!2sBucht%20M1%20carpfishing!5e0!3m2!1sde!2sat!4v1700000000000";
 const MAPS_LINK = "https://www.google.com/maps/place/Bucht+M1+carpfishing/@47.8694931,17.2152559,17z";
 
 const Anfahrt = () => {
+  const { t } = useTranslation();
+  const bundesstrasseSteps = t("directions.roadSteps", { returnObjects: true }) as string[];
+  const autobahnSteps = t("directions.highwaySteps", { returnObjects: true }) as string[];
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -85,15 +67,14 @@ const Anfahrt = () => {
               <div className="flex items-center gap-4 mb-5">
                 <div className="w-8 h-px bg-accent" />
                 <span className="font-body text-[11px] tracking-[0.4em] uppercase text-accent/90">
-                  So findest du uns
+{t("directions.eyebrow")}
                 </span>
               </div>
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-white/95 mb-3 drop-shadow-sm">
-                Anfahrt
+{t("directions.title")}
               </h1>
               <p className="font-body text-white/70 max-w-xl text-sm md:text-base leading-relaxed">
-                Ob über die Bundesstraße oder die Autobahn – der Weg zu uns ist
-                unkompliziert. Hier findest du beide Routen Schritt für Schritt.
+{t("directions.intro")}
               </p>
             </motion.div>
           </div>
@@ -120,11 +101,9 @@ const Anfahrt = () => {
                 <Car size={20} className="text-primary" />
               </div>
               <div>
-                <h2 className="font-display text-xl text-foreground">
-                  Bundesstraße
-                </h2>
+<h2 className="font-display text-xl text-foreground">{t("directions.roadTitle")}</h2>
                 <p className="font-body text-xs text-muted-foreground tracking-wide uppercase">
-                  Mautfrei
+{t("directions.roadSub")}
                 </p>
               </div>
             </div>
@@ -194,10 +173,10 @@ const Anfahrt = () => {
             className="text-center mb-8"
           >
             <span className="inline-block font-body text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
-              Standort
+{t("directions.locationEyebrow")}
             </span>
             <h2 className="font-display text-2xl md:text-3xl text-foreground">
-              Hier findest du uns
+{t("directions.locationTitle")}
             </h2>
           </motion.div>
 
@@ -237,7 +216,7 @@ const Anfahrt = () => {
               className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-body text-[11px] tracking-[0.15em] uppercase font-semibold hover:bg-primary/90 transition-colors duration-300"
             >
               <MapPin size={16} />
-              Route in Google Maps öffnen
+{t("directions.mapsCta")}
               <ExternalLink size={14} />
             </a>
           </motion.div>
@@ -257,10 +236,10 @@ const Anfahrt = () => {
           >
             <div className="text-center mb-8">
               <span className="inline-block font-body text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
-                Kontakt
+{t("directions.contactEyebrow")}
               </span>
               <h2 className="font-display text-2xl md:text-3xl text-foreground">
-                Fragen zur Anfahrt?
+{t("directions.contactTitle")}
               </h2>
             </div>
 
@@ -276,7 +255,7 @@ const Anfahrt = () => {
                   +43 699 130 35 163
                 </span>
                 <span className="font-body text-xs text-muted-foreground">
-                  Anrufen
+{t("directions.call")}
                 </span>
               </a>
 
@@ -291,7 +270,7 @@ const Anfahrt = () => {
                   info@buchtm1.at
                 </span>
                 <span className="font-body text-xs text-muted-foreground">
-                  E-Mail schreiben
+{t("directions.mail")}
                 </span>
               </a>
 
@@ -308,7 +287,7 @@ const Anfahrt = () => {
                   Bucht M1
                 </span>
                 <span className="font-body text-xs text-muted-foreground">
-                  Facebook besuchen
+{t("directions.facebook")}
                 </span>
               </a>
             </div>
