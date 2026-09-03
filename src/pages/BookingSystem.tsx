@@ -133,6 +133,8 @@ const BookingSystem = () => {
     getDay(range.to) === 0;
   const meetsMinStay = nights >= 3 || isWeekendException;
   const totalPersons = persons + companions + companionsKids;
+  const companionsAllowed = spot?.allow_companions !== false;
+  const maxTotalPersons = companionsAllowed ? 4 : (spot?.max_persons ?? 2);
 
   // Hütte ist immer dabei: Unterkunftstyp = Spot, Personen = alle
   const accommodationType = spot?.accommodation_type ?? "none";
@@ -145,6 +147,7 @@ const BookingSystem = () => {
         accommodationType,
         accommodationPersons,
         totalPersons,
+        anglers: persons,
         companions,
         allInclusive,
         extras: allExtras,
@@ -156,6 +159,7 @@ const BookingSystem = () => {
       accommodationType,
       accommodationPersons,
       totalPersons,
+      persons,
       companions,
       allInclusive,
       allExtras,
@@ -170,7 +174,7 @@ const BookingSystem = () => {
     !!range?.to &&
     meetsMinStay &&
     persons >= 1 &&
-    totalPersons <= 4 &&
+    totalPersons <= maxTotalPersons &&
     !!contact.first_name.trim() &&
     !!contact.last_name.trim() &&
     !!contact.email.trim() &&
@@ -195,6 +199,10 @@ const BookingSystem = () => {
   const handleSpotSelect = (s: FishingSpot) => {
     setSpot(s);
     if (persons > s.max_persons) setPersons(s.max_persons);
+    if (s.allow_companions === false) {
+      setCompanions(0);
+      setCompanionsKids(0);
+    }
     window.setTimeout(() => {
       bookingDetailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
@@ -215,6 +223,17 @@ const BookingSystem = () => {
 
   const handleSubmit = async () => {
     if (!user || !spot || !range?.from || !range?.to) return;
+
+    const normalizedPhone = contact.phone.replace(/[^0-9+]/g, "");
+    if (normalizedPhone.startsWith("+36") || normalizedPhone.startsWith("0036")) {
+      toast({
+        title: "Buchung nicht möglich",
+        description: "Leider können wir keine Buchungen aus Ungarn annehmen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     const payload = {
@@ -225,7 +244,8 @@ const BookingSystem = () => {
       nights: pricing.nights,
       extra_24h_blocks: pricing.extra24hBlocks,
       persons,
-      companions: companions + companionsKids,
+      companions,
+      companions_kids: companionsKids,
       accommodation_type: accommodationType,
       accommodation_persons: accommodationPersons,
       all_inclusive: allInclusive,
@@ -283,7 +303,7 @@ const BookingSystem = () => {
               <div className="flex items-center justify-center gap-4 mb-6">
                 <div className="w-12 h-px bg-accent" />
                 <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-                  Anfrage gesendet
+  Vorreserviert
                 </span>
                 <div className="w-12 h-px bg-accent" />
               </div>
@@ -293,9 +313,10 @@ const BookingSystem = () => {
               </h1>
 
               <p className="font-body text-sm text-muted-foreground leading-relaxed mb-10">
-                Du erhältst gleich eine E-Mail mit unseren Bankdaten und der Höhe der Anzahlung.
-                Bitte überweise innerhalb von <strong>24 Stunden</strong> – andernfalls wird deine
-                Reservierung automatisch storniert.
+Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-Mail mit
+                unseren Bankdaten und der Höhe der Anzahlung (50 %). Bitte überweise innerhalb von{" "}
+                <strong>7 Tagen</strong> – andernfalls wird die Vorreservierung automatisch
+                aufgehoben. Die Anzahlung wird nicht rückerstattet.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -344,23 +365,20 @@ const BookingSystem = () => {
           <div className="bg-card border border-border p-4 md:p-5 mb-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display text-base text-foreground">Zeitraum</h3>
-              <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                Min. 3 Nächte · Fr–So erlaubt
-              </span>
             </div>
             <StepDates spotId={spot?.id ?? null} range={range} onChange={setRange} mode="custom" />
             {nights > 0 && nights < 3 && !isWeekendException && (
               <div className="mt-3 p-3 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-sm">
                 <span className="font-body text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                  <strong>Mindestaufenthalt 3 Nächte.</strong> Ausnahme: <strong>Freitag bis Sonntag</strong> (2 Nächte) am Wochenende ist erlaubt. Du hast aktuell {nights}{" "}
-                  {nights === 1 ? "Nacht" : "Nächte"} gewählt.
+                  Dieser Zeitraum ist leider nicht buchbar. Bitte wähle einen längeren
+                  Aufenthalt oder ein Wochenende von <strong>Freitag bis Sonntag</strong>.
                 </span>
               </div>
             )}
             {isWeekendException && (
               <div className="mt-3 p-3 border border-primary/40 bg-primary/5 rounded-sm">
                 <span className="font-body text-xs text-foreground leading-relaxed">
-                  <strong>Wochenend-Aufenthalt</strong> (Fr–So, 2 Nächte) – erlaubt.
+                  <strong>Wochenend-Aufenthalt</strong> (Fr–So) – buchbar.
                 </span>
               </div>
             )}
@@ -392,7 +410,7 @@ const BookingSystem = () => {
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="font-display text-base text-foreground">Personen</h3>
                         <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                          {totalPersons} / 4
+                          {totalPersons} / {maxTotalPersons}
                         </span>
                       </div>
                       <div className="space-y-3">
@@ -404,28 +422,42 @@ const BookingSystem = () => {
                           onMinus={() => setPersons(Math.max(1, persons - 1))}
                           onPlus={() => setPersons(Math.min(spot.max_persons, persons + 1))}
                           disableMinus={persons <= 1}
-                          disablePlus={persons >= spot.max_persons || totalPersons >= 4}
+                          disablePlus={persons >= spot.max_persons || totalPersons >= maxTotalPersons}
                         />
-                        <PersonRow
-                          icon={<UserPlus className="w-4 h-4 text-accent" strokeWidth={1.4} />}
-                          label="Begleitung > 10 J."
-                          hint="€10 / 24h"
-                          value={companions}
-                          onMinus={() => setCompanions(Math.max(0, companions - 1))}
-                          onPlus={() => setCompanions(companions + 1)}
-                          disableMinus={companions <= 0}
-                          disablePlus={totalPersons >= 4}
-                        />
-                        <PersonRow
-                          icon={<Baby className="w-4 h-4 text-accent" strokeWidth={1.4} />}
-                          label="Kinder bis 10 J."
-                          hint="kostenlos"
-                          value={companionsKids}
-                          onMinus={() => setCompanionsKids(Math.max(0, companionsKids - 1))}
-                          onPlus={() => setCompanionsKids(companionsKids + 1)}
-                          disableMinus={companionsKids <= 0}
-                          disablePlus={totalPersons >= 4}
-                        />
+                        {companionsAllowed ? (
+                          <>
+                            <PersonRow
+                              icon={<UserPlus className="w-4 h-4 text-accent" strokeWidth={1.4} />}
+                              label="Begleitung > 10 J."
+                              hint="€10 / 24h"
+                              value={companions}
+                              onMinus={() => setCompanions(Math.max(0, companions - 1))}
+                              onPlus={() => setCompanions(companions + 1)}
+                              disableMinus={companions <= 0}
+                              disablePlus={totalPersons >= maxTotalPersons}
+                            />
+                            <PersonRow
+                              icon={<Baby className="w-4 h-4 text-accent" strokeWidth={1.4} />}
+                              label="Kinder bis 10 J."
+                              hint="kostenlos"
+                              value={companionsKids}
+                              onMinus={() => setCompanionsKids(Math.max(0, companionsKids - 1))}
+                              onPlus={() => setCompanionsKids(companionsKids + 1)}
+                              disableMinus={companionsKids <= 0}
+                              disablePlus={totalPersons >= maxTotalPersons}
+                            />
+                          </>
+                        ) : (
+                          <p className="font-body text-[11px] text-muted-foreground leading-relaxed">
+                            Für {spot.name} sind ausschließlich Angler zugelassen – keine
+                            Begleitpersonen.
+                          </p>
+                        )}
+                        {spot.bunk_beds === false && (
+                          <p className="font-body text-[11px] text-muted-foreground leading-relaxed">
+                            Hinweis: In diesem Platz gibt es <strong>kein Stockbett</strong>.
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -581,6 +613,18 @@ const BookingSystem = () => {
                           }
                           value={pricing.licensePrice}
                         />
+                        {pricing.fishingFeePrice > 0 && (
+                          <PriceRow
+                            label={`Fischereigebühr · ${nights} Tage`}
+                            value={pricing.fishingFeePrice}
+                          />
+                        )}
+                        {pricing.soloSurchargePrice > 0 && (
+                          <PriceRow
+                            label={`Alleinangler-Aufschlag · ${nights} Tage`}
+                            value={pricing.soloSurchargePrice}
+                          />
+                        )}
                         {pricing.accommodationPrice > 0 && (
                           <PriceRow
                             label={`Hütte · ${nights} N`}
@@ -614,6 +658,14 @@ const BookingSystem = () => {
                         </span>
                         <span className="font-display text-2xl text-primary">
                           €{pricing.total.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="px-5 py-3 border-t border-border flex items-baseline justify-between">
+                        <span className="font-body text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+                          Anzahlung 50 %
+                        </span>
+                        <span className="font-body text-sm text-foreground font-semibold">
+                          €{(pricing.total / 2).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -664,12 +716,14 @@ const BookingSystem = () => {
                     >
                       {submitting
                         ? "Wird gesendet..."
-                        : `Anfrage senden · €${pricing.total.toFixed(2)}`}
+                        : `Jetzt vorreservieren · €${pricing.total.toFixed(2)}`}
                       {!submitting && <Check className="w-3.5 h-3.5" />}
                     </button>
                     <p className="font-body text-[10px] text-muted-foreground text-center leading-relaxed">
-                      Nach dem Abschicken erhältst du eine E-Mail mit unseren Bankdaten. Anzahlung
-                      innerhalb von 24h, sonst wird die Reservierung automatisch storniert.
+                      Dein Platz ist danach <strong>vorreserviert</strong>. Du erhältst eine E-Mail
+                      mit unseren Bankdaten. Die Anzahlung von 50 % muss innerhalb von 7 Tagen
+                      eingehen, sonst wird die Vorreservierung automatisch aufgehoben. Die Anzahlung
+                      wird nicht rückerstattet.
                     </p>
               </div>
             </div>

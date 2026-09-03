@@ -6,7 +6,7 @@ const features = [
   {
     icon: MapPin,
     number: "01",
-    title: "10 Angelplätze",
+    title: "9 Angelplätze mit Hütte",
     description: "Großzügige, voneinander getrennte Spots mit direktem Wasserzugang und eigenem Steg.",
   },
   {

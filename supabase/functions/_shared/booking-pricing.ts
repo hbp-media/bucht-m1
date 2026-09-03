@@ -11,6 +11,8 @@ const PRICES = {
   CLEANING_PER_PERSON: 5,
   ALL_INCLUSIVE_PER_PERSON_24H: 15,
   COMPANION_PRICE_PER_24H: 10,
+  FISHING_FEE_PER_DAY: 10,
+  SOLO_SURCHARGE_PER_DAY: 15,
 } as const;
 
 export interface BookingInput {
@@ -20,6 +22,7 @@ export interface BookingInput {
   extra_24h_blocks: number;
   persons: number;
   companions: number;
+  companions_kids?: number;
   accommodation_type: string;
   accommodation_persons: number;
   all_inclusive: boolean;
@@ -28,6 +31,8 @@ export interface BookingInput {
 
 export interface PricingResult {
   license_price: number;
+  fishing_fee_price: number;
+  solo_surcharge_price: number;
   accommodation_price: number;
   cleaning_price: number;
   all_inclusive_price: number;
@@ -82,6 +87,11 @@ export async function recalculatePrice(
   const license_price =
     PRICES.LICENSE_BASE + calcExtra24hBlocks(input.nights) * PRICES.LICENSE_EXTRA_24H;
 
+  // 1b) Fischereigebühr pro Tag + Alleinangler-Aufschlag
+  const fishing_fee_price = input.nights > 0 ? input.nights * PRICES.FISHING_FEE_PER_DAY : 0;
+  const solo_surcharge_price =
+    input.persons === 1 && input.nights > 0 ? input.nights * PRICES.SOLO_SURCHARGE_PER_DAY : 0;
+
   // 2) Unterkunft + Reinigung
   let accommodation_price = 0;
   let cleaning_price = 0;
@@ -98,7 +108,7 @@ export async function recalculatePrice(
     }
   }
 
-  // 3) All inclusive (gilt für Angler + Begleitpersonen)
+  // 3) All inclusive (gilt für Angler + zahlende Begleitpersonen; Kinder unter 10 kostenlos)
   const totalPersons = input.persons + (input.companions || 0);
   const all_inclusive_price = input.all_inclusive
     ? totalPersons * input.nights * PRICES.ALL_INCLUSIVE_PER_PERSON_24H
@@ -138,10 +148,13 @@ export async function recalculatePrice(
   }
 
   const total_price =
-    license_price + accommodation_price + cleaning_price + all_inclusive_price + extras_price;
+    license_price + fishing_fee_price + solo_surcharge_price +
+    accommodation_price + cleaning_price + all_inclusive_price + extras_price;
 
   return {
     license_price: round2(license_price),
+    fishing_fee_price: round2(fishing_fee_price),
+    solo_surcharge_price: round2(solo_surcharge_price),
     accommodation_price: round2(accommodation_price),
     cleaning_price: round2(cleaning_price),
     all_inclusive_price: round2(all_inclusive_price),

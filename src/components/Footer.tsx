@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Instagram, Facebook } from "lucide-react";
 
 const footerLinks = [
   { label: "Startseite", href: "/" },
@@ -20,7 +21,7 @@ const Footer = () => {
               Bucht <span className="text-accent italic">M1</span>
             </Link>
             <p className="font-body text-sm text-background/50 mt-4 leading-relaxed max-w-xs">
-              Exklusives Karpfenangeln in Ungarn. 10 Plätze, 9.6 Hektar, privater Zugang.
+              Exklusives Karpfenangeln in Ungarn. 9 Angelplätze mit Hütte, 9.6 Hektar, privater Zugang.
             </p>
           </div>
 
@@ -52,7 +53,7 @@ const Footer = () => {
                 href="tel:+436991303516"
                 className="font-body text-sm text-background/60 hover:text-accent transition-colors duration-300"
               >
-                +43 699 130 35 163
+                Wolfgang · +43 699 130 35 163
               </a>
               <a
                 href="mailto:info@buchtm1.at"
@@ -60,14 +61,26 @@ const Footer = () => {
               >
                 info@buchtm1.at
               </a>
-              <a
-                href="https://www.facebook.com/profile.php?id=61575107498498"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-body text-sm text-background/60 hover:text-accent transition-colors duration-300"
-              >
-                Facebook
-              </a>
+              <div className="flex items-center gap-4 mt-2">
+                <a
+                  href="https://www.instagram.com/explore/locations/1028744600/bucht-m1---carpfishing/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Bucht M1 auf Instagram"
+                  className="text-background/60 hover:text-accent transition-colors duration-300"
+                >
+                  <Instagram className="w-5 h-5" strokeWidth={1.5} />
+                </a>
+                <a
+                  href="https://www.facebook.com/BuchtM1Carpfishing/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Bucht M1 auf Facebook"
+                  className="text-background/60 hover:text-accent transition-colors duration-300"
+                >
+                  <Facebook className="w-5 h-5" strokeWidth={1.5} />
+                </a>
+              </div>
             </div>
           </div>
         </div>

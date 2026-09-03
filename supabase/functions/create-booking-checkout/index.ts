@@ -17,6 +17,7 @@ const BodySchema = z.object({
     extra_24h_blocks: z.number().int().nonnegative(),
     persons: z.number().int().positive(),
     companions: z.number().int().nonnegative(),
+    companions_kids: z.number().int().nonnegative().optional().default(0),
     accommodation_type: z.string(),
     accommodation_persons: z.number().int().nonnegative(),
     all_inclusive: z.boolean(),
@@ -68,6 +69,16 @@ Deno.serve(async (req) => {
       });
     }
     const { booking } = parsed.data;
+
+    // Ungarische Nummern sind nicht zugelassen
+    const normalizedPhone = booking.phone.replace(/[^0-9+]/g, '');
+    if (normalizedPhone.startsWith('+36') || normalizedPhone.startsWith('0036')) {
+      return new Response(
+        JSON.stringify({ error: 'Leider können wir keine Buchungen aus Ungarn annehmen.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     const admin = createClient(supabaseUrl, serviceKey);
 
     // Server-seitige Preisberechnung
@@ -76,11 +87,13 @@ Deno.serve(async (req) => {
     // Deadline für Anzahlung aus Settings (Default 24h)
     const { data: settings } = await admin
       .from('payment_settings')
-      .select('deposit_deadline_hours')
+      .select('deposit_deadline_hours, deposit_percent')
       .limit(1)
       .maybeSingle();
-    const deadlineHours = settings?.deposit_deadline_hours ?? 24;
+    const deadlineHours = settings?.deposit_deadline_hours ?? 168;
     const paymentDeadline = new Date(Date.now() + deadlineHours * 3600_000).toISOString();
+    const depositPercent = settings?.deposit_percent ?? 50;
+    const depositAmount = Math.round((pricing.total_price * depositPercent) / 100 * 100) / 100;
 
     const { data: inserted, error: insertErr } = await admin
       .from('bookings')
@@ -94,6 +107,7 @@ Deno.serve(async (req) => {
         extra_24h_blocks: booking.extra_24h_blocks,
         persons: booking.persons,
         companions: booking.companions,
+        companions_kids: booking.companions_kids ?? 0,
         accommodation_type: booking.accommodation_type,
         accommodation_persons: booking.accommodation_persons,
         all_inclusive: booking.all_inclusive,
@@ -103,6 +117,8 @@ Deno.serve(async (req) => {
         phone: booking.phone,
         message: booking.message,
         license_price: pricing.license_price,
+        fishing_fee_price: pricing.fishing_fee_price,
+        solo_surcharge_price: pricing.solo_surcharge_price,
         accommodation_price: pricing.accommodation_price,
         cleaning_price: pricing.cleaning_price,
         all_inclusive_price: pricing.all_inclusive_price,
@@ -113,6 +129,7 @@ Deno.serve(async (req) => {
         status: 'pending',
         payment_status: 'deposit_pending',
         payment_deadline: paymentDeadline,
+        deposit_amount: depositAmount,
       })
       .select('id')
       .single();
@@ -142,8 +159,8 @@ Deno.serve(async (req) => {
         const rows = admins.map((a: { user_id: string }) => ({
           user_id: a.user_id,
           type: 'admin_new_booking',
-          title: 'Aktion: Neue Buchungsanfrage prüfen',
-          message: `${booking.first_name} ${booking.last_name} – ${booking.start_date} bis ${booking.end_date}. Bitte freigeben oder ablehnen.`,
+          title: 'Neue Vorreservierung',
+          message: `${booking.first_name} ${booking.last_name} – ${booking.start_date} bis ${booking.end_date}. Anzahlung ausstehend.`,
           link: '/admin',
           booking_id: inserted.id,
         }));
