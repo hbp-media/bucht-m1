@@ -62,8 +62,16 @@ Deno.serve(async (req) => {
     const isPending = bk.status === 'pending';
     const isPaidStage = ['deposit_paid', 'paid'].includes(bk.payment_status);
 
-    if (!isPending && !isPaidStage) {
-      return new Response(JSON.stringify({ error: 'Stornierung in diesem Status nicht möglich.' }), {
+    // Sobald die Anzahlung bestätigt ist, kann der Kunde nicht mehr selbst zurücktreten.
+    if (isPaidStage) {
+      return new Response(
+        JSON.stringify({ error: 'Nach bestätigter Anzahlung ist keine Änderung mehr über das Konto möglich. Bitte kontaktiere uns telefonisch.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    if (!isPending) {
+      return new Response(JSON.stringify({ error: 'In diesem Status nicht möglich.' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

@@ -49,7 +49,7 @@ interface PaySettings {
 }
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  pending: { label: "Anfrage prüfen", cls: "bg-amber-100 text-amber-800 border-amber-200" },
+  pending: { label: "Vorreserviert", cls: "bg-amber-100 text-amber-800 border-amber-200" },
   approved: { label: "Anzahlung offen", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
   rejected: { label: "Storniert", cls: "bg-red-100 text-red-800 border-red-200" },
   paid: { label: "Bezahlt", cls: "bg-primary/10 text-primary border-primary/20" },
@@ -220,9 +220,10 @@ const BookingDashboard = ({ booking, settings, onClose, onCancelRequest }: {
   const startMs = new Date(booking.start_date).getTime();
   const withinFreeWindow = startMs - Date.now() > cancelDays * 86400_000;
   const canCancel =
-    booking.status === "pending" ||
-    (["deposit_paid", "paid"].includes(booking.payment_status) && booking.status !== "rejected");
-  const showDeposit = booking.status === "approved" && booking.payment_status === "deposit_pending";
+    booking.status === "pending" && !["deposit_paid", "paid"].includes(booking.payment_status);
+  const showDeposit =
+    ["pending", "approved"].includes(booking.status) &&
+    booking.payment_status === "deposit_pending";
   const showFinal = booking.payment_status === "deposit_paid" && booking.status !== "rejected";
   const timeline = buildTimeline(booking);
   const deposit = Number(booking.deposit_amount || 0);
@@ -431,7 +432,8 @@ const MyBookings = () => {
               : b.status === "approved" && b.payment_status === "deposit_paid"
                 ? { label: "Anzahlung bezahlt – Restzahlung vor Ort", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" }
                 : baseStatus;
-          const showDeposit = b.status === "approved" && b.payment_status === "deposit_pending";
+          const showDeposit =
+            ["pending", "approved"].includes(b.status) && b.payment_status === "deposit_pending";
           const showFinal = b.payment_status === "deposit_paid" && b.status !== "rejected";
           return (
             <motion.div

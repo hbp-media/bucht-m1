@@ -8,6 +8,8 @@ export const PRICES = {
   ACCOMMODATION_EXTRA_PERSON: 10, // pro Zusatzperson pro Nacht
   CLEANING_PER_PERSON: 5,      // einmalig je Person der Unterkunft
   ALL_INCLUSIVE_PER_PERSON_24H: 15,
+  FISHING_FEE_PER_DAY: 10,     // Angelschein-/Fischereigebühr pro Tag
+  SOLO_SURCHARGE_PER_DAY: 15,  // Aufschlag wenn nur 1 Angler
 } as const;
 
 export type AccommodationType = "none" | "hut" | "caravan";
@@ -103,10 +105,18 @@ export const calcExtraTotal = (
   }
 };
 
+export const calcFishingFee = (nights: number): number =>
+  nights > 0 ? nights * PRICES.FISHING_FEE_PER_DAY : 0;
+
+export const calcSoloSurcharge = (anglers: number, nights: number): number =>
+  anglers === 1 && nights > 0 ? nights * PRICES.SOLO_SURCHARGE_PER_DAY : 0;
+
 export interface PricingBreakdown {
   nights: number;
   extra24hBlocks: number;
   licensePrice: number;
+  fishingFeePrice: number;
+  soloSurchargePrice: number;
   accommodationPrice: number;
   cleaningPrice: number;
   allInclusivePrice: number;
@@ -121,6 +131,7 @@ export const buildPricing = (input: {
   accommodationType: AccommodationType;
   accommodationPersons: number;
   totalPersons: number;
+  anglers?: number;          // Anzahl Angler (für Alleinangler-Aufschlag)
   companions: number;        // zahlende Begleiter (>10 Jahre)
   allInclusive: boolean;
   extras: Extra[];
@@ -129,6 +140,11 @@ export const buildPricing = (input: {
 }): PricingBreakdown => {
   const licensePrice = calcLicensePrice(input.nights);
   const extra24hBlocks = calcExtra24hBlocks(input.nights);
+  const fishingFeePrice = calcFishingFee(input.nights);
+  const soloSurchargePrice = calcSoloSurcharge(
+    input.anglers ?? Math.max(1, input.totalPersons - input.companions),
+    input.nights,
+  );
 
   const acc = calcAccommodation({
     type: input.accommodationType,
@@ -171,6 +187,8 @@ export const buildPricing = (input: {
     nights: input.nights,
     extra24hBlocks,
     licensePrice,
+    fishingFeePrice,
+    soloSurchargePrice,
     accommodationPrice: acc.stayPrice,
     cleaningPrice: acc.cleaningPrice,
     allInclusivePrice,
@@ -179,6 +197,8 @@ export const buildPricing = (input: {
     extrasPrice,
     total:
       licensePrice +
+      fishingFeePrice +
+      soloSurchargePrice +
       acc.stayPrice +
       acc.cleaningPrice +
       allInclusivePrice +

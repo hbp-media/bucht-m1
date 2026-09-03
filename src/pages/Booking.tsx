@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Phone, Globe } from "lucide-react";
+import { Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,41 +39,18 @@ const Booking = () => {
               Platz <span className="italic text-primary">buchen</span>
             </h1>
             <p className="font-body text-sm text-muted-foreground max-w-md mx-auto">
-              Wähle deine bevorzugte Buchungsmethode.
+              Reserviere deinen Angelplatz bequem online. Buchungen sind nur mit Anmeldung möglich.
             </p>
           </motion.div>
 
           {/* Options */}
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {/* Phone */}
-            <motion.a
-              href="tel:+436641234567"
-              className="group relative p-10 border border-border hover:border-accent/40 transition-all duration-500 text-center"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              whileHover={{ y: -4 }}
-            >
-              <div className="w-16 h-16 mx-auto mb-6 border border-accent/20 flex items-center justify-center group-hover:border-accent/50 transition-colors duration-300">
-                <Phone className="w-6 h-6 text-primary" strokeWidth={1.5} />
-              </div>
-              <h2 className="font-display text-xl text-foreground mb-3">
-                Telefonisch buchen
-              </h2>
-              <p className="font-body text-sm text-muted-foreground mb-6">
-                Ruf uns direkt an und reserviere deinen Platz persönlich.
-              </p>
-              <span className="font-body text-lg text-primary font-medium tracking-wide">
-                +43 664 123 4567
-              </span>
-            </motion.a>
-
+          <div className="max-w-md mx-auto">
             {/* Online */}
             <motion.button
               onClick={handleOnlineBooking}
-              className="group relative p-10 border border-border hover:border-accent/40 transition-all duration-500 text-center cursor-pointer"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
+              className="group relative w-full p-10 border border-border hover:border-accent/40 transition-all duration-500 text-center cursor-pointer"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.3 }}
               whileHover={{ y: -4 }}
             >
@@ -91,6 +68,7 @@ const Booking = () => {
               </span>
             </motion.button>
           </div>
+
         </div>
       </section>
     </main>

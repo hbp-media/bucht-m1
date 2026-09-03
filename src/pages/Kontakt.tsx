@@ -84,7 +84,7 @@ const Kontakt = () => {
                 <Phone className="w-5 h-5 text-primary group-hover:text-accent transition-colors duration-300" strokeWidth={1.5} />
               </div>
               <div>
-                <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Telefon</span>
+                <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Telefon · Wolfgang</span>
                 <p className="font-display text-lg text-foreground mt-1 group-hover:text-primary transition-colors duration-300">+43 699 130 35 163</p>
               </div>
             </motion.a>

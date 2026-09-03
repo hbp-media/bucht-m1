@@ -18,6 +18,9 @@ export interface FishingSpot {
   active: boolean;
   sort_order: number;
   accommodation_type: AccommodationType;
+  amenities?: string[] | null;
+  allow_companions?: boolean | null;
+  bunk_beds?: boolean | null;
 }
 
 interface StepSpotProps {

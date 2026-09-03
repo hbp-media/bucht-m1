@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
     const { error: updErr } = await admin
       .from('bookings')
       .update({
+        status: 'approved',
         payment_status: 'deposit_paid',
         deposit_paid_at: new Date().toISOString(),
         payment_deadline: null,

@@ -79,7 +79,9 @@ const HeroSection = () => {
             transition={{ duration: 0.7, delay: 1 }}
           >
             Reserviere deinen exklusiven Angelplatz.
+            <span className="block mt-2 text-accent">Buchungen nur mit Anmeldung möglich.</span>
           </motion.p>
+
 
           {/* CTA */}
           <motion.div

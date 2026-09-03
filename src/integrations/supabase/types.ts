@@ -56,11 +56,14 @@ export type Database = {
           all_inclusive_price: number
           base_price: number
           booking_mode: string
+          booking_number: string | null
           cancelled_at: string | null
           cancelled_by: string | null
           cleaning_price: number
           companions: number
+          companions_kids: number
           created_at: string
+          created_by_admin: boolean
           deposit_amount: number
           deposit_paid_at: string | null
           email: string
@@ -71,6 +74,7 @@ export type Database = {
           final_paid_at: string | null
           final_payment_due_date: string | null
           first_name: string
+          fishing_fee_price: number
           id: string
           last_name: string
           license_price: number
@@ -81,6 +85,7 @@ export type Database = {
           payment_status: Database["public"]["Enums"]["payment_status"]
           persons: number
           phone: string
+          solo_surcharge_price: number
           spot_id: string
           start_date: string
           status: Database["public"]["Enums"]["booking_status"]
@@ -97,11 +102,14 @@ export type Database = {
           all_inclusive_price?: number
           base_price?: number
           booking_mode?: string
+          booking_number?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           cleaning_price?: number
           companions?: number
+          companions_kids?: number
           created_at?: string
+          created_by_admin?: boolean
           deposit_amount?: number
           deposit_paid_at?: string | null
           email: string
@@ -112,6 +120,7 @@ export type Database = {
           final_paid_at?: string | null
           final_payment_due_date?: string | null
           first_name: string
+          fishing_fee_price?: number
           id?: string
           last_name: string
           license_price?: number
@@ -122,6 +131,7 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           persons?: number
           phone: string
+          solo_surcharge_price?: number
           spot_id: string
           start_date: string
           status?: Database["public"]["Enums"]["booking_status"]
@@ -138,11 +148,14 @@ export type Database = {
           all_inclusive_price?: number
           base_price?: number
           booking_mode?: string
+          booking_number?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           cleaning_price?: number
           companions?: number
+          companions_kids?: number
           created_at?: string
+          created_by_admin?: boolean
           deposit_amount?: number
           deposit_paid_at?: string | null
           email?: string
@@ -153,6 +166,7 @@ export type Database = {
           final_paid_at?: string | null
           final_payment_due_date?: string | null
           first_name?: string
+          fishing_fee_price?: number
           id?: string
           last_name?: string
           license_price?: number
@@ -163,6 +177,7 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           persons?: number
           phone?: string
+          solo_surcharge_price?: number
           spot_id?: string
           start_date?: string
           status?: Database["public"]["Enums"]["booking_status"]
@@ -226,6 +241,9 @@ export type Database = {
         Row: {
           accommodation_type: string
           active: boolean
+          allow_companions: boolean
+          amenities: string[]
+          bunk_beds: boolean
           created_at: string
           description: string
           features: string[]
@@ -241,6 +259,9 @@ export type Database = {
         Insert: {
           accommodation_type?: string
           active?: boolean
+          allow_companions?: boolean
+          amenities?: string[]
+          bunk_beds?: boolean
           created_at?: string
           description?: string
           features?: string[]
@@ -256,6 +277,9 @@ export type Database = {
         Update: {
           accommodation_type?: string
           active?: boolean
+          allow_companions?: boolean
+          amenities?: string[]
+          bunk_beds?: boolean
           created_at?: string
           description?: string
           features?: string[]
