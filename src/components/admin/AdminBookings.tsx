@@ -293,6 +293,23 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={manualOpen} onOpenChange={setManualOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Buchung manuell anlegen</DialogTitle>
+          </DialogHeader>
+          {manualOpen && (
+            <AdminManualBooking
+              onCreated={() => {
+                load();
+                loadCounts();
+              }}
+              onClose={() => setManualOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
