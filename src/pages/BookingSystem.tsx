@@ -17,6 +17,8 @@ import StepDates from "@/components/booking/StepDates";
 import AvailableSpotsForRange from "@/components/booking/AvailableSpotsForRange";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import lageplanImg from "@/assets/lageplan.jpg";
+
 
 
 import {
@@ -656,7 +658,7 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
                           />
                         )}
                         {pricing.allInclusivePrice > 0 && (
-                          <PriceRow label="All Inclusive" value={pricing.allInclusivePrice} />
+                          <PriceRow label="All you can Eat" value={pricing.allInclusivePrice} />
                         )}
                         {pricing.extras.map((e) => (
                           <PriceRow
