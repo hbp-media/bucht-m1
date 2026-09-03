@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Mail, Phone } from "lucide-react";
+import { Eye, Mail, Phone, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import BookingDetail from "./BookingDetail";
+import AdminManualBooking from "./AdminManualBooking";
 
 interface AdminBooking {
   id: string;
@@ -66,6 +67,7 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [seen, setSeen] = useState<Record<string, number>>({});
+  const [manualOpen, setManualOpen] = useState(false);
 
   const loadCounts = async () => {
     const [pendingRes, approvedUnpaidRes, depositPaidRes, paidRes, cancelledRes] = await Promise.all([
@@ -150,6 +152,15 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
 
   return (
     <div>
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => setManualOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-body text-[11px] tracking-[0.2em] uppercase hover:opacity-90 transition-opacity"
+        >
+          <Plus className="w-3.5 h-3.5" /> Buchung manuell anlegen
+        </button>
+      </div>
+
       {/* Filter */}
       <div className="flex flex-wrap gap-1 mb-6 border-b border-border">
         {STATUS_FILTERS.map((f) => {
@@ -278,6 +289,23 @@ const AdminBookings = ({ onCountsChange }: Props = {}) => {
               bookingId={selectedId}
               onClose={() => setSelectedId(null)}
               onChanged={load}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={manualOpen} onOpenChange={setManualOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Buchung manuell anlegen</DialogTitle>
+          </DialogHeader>
+          {manualOpen && (
+            <AdminManualBooking
+              onCreated={() => {
+                load();
+                loadCounts();
+              }}
+              onClose={() => setManualOpen(false)}
             />
           )}
         </DialogContent>

@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import lakeHero from "@/assets/lake-hero.jpg";
 
 const HeroSection = () => {
+  const { t } = useTranslation();
   return (
     <section className="relative min-h-screen flex flex-col md:flex-row overflow-hidden">
       {/* Left: Image with diagonal edge (straight on mobile) */}
@@ -47,7 +49,7 @@ const HeroSection = () => {
           >
             <div className="w-12 h-px bg-accent" />
             <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-              Private Carp Fishing
+              {t("hero.eyebrow")}
             </span>
           </motion.div>
 
@@ -68,7 +70,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.8 }}
           >
-            Carp Fishing auf höchstem Niveau.
+            {t("hero.subline")}
           </motion.p>
 
           {/* Supporting text */}
@@ -78,8 +80,8 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 1 }}
           >
-            Reserviere deinen exklusiven Angelplatz.
-            <span className="block mt-2 text-accent">Buchungen nur mit Anmeldung möglich.</span>
+            {t("hero.support")}
+            <span className="block mt-2 text-accent">{t("hero.loginNote")}</span>
           </motion.p>
 
 
@@ -94,7 +96,7 @@ const HeroSection = () => {
               className="inline-flex items-center gap-4 group"
             >
               <span className="px-8 py-4 font-body text-xs tracking-[0.2em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light transition-colors duration-300">
-                Jetzt buchen
+                {t("hero.cta")}
               </span>
               <motion.div
                 className="w-12 h-12 border border-accent/30 flex items-center justify-center group-hover:border-accent/60 transition-colors duration-300"
@@ -125,7 +127,7 @@ const HeroSection = () => {
           />
         </div>
         <span className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground rotate-0">
-          Scroll
+          {t("hero.scroll")}
         </span>
       </motion.div>
     </section>

@@ -15,7 +15,7 @@
 - [x] Auto-Löschung nach 7 Tagen ohne Anzahlung
 - [ ] Admin-Dashboard: direkt "Anzahlung bestätigen"
 - [x] Kein Storno-Button bei bestätigter Anzahlung
-- [ ] Admin kann Buchung manuell eintragen
+- [x] Admin kann Buchung manuell eintragen
 
 ## Phase 3 – Preislogik (client + server)
 - [x] Fischereigebühr +10 €/Tag als eigene Position
@@ -47,4 +47,4 @@
 - [x] +36 (Ungarn) blockieren mit Hinweis
 
 ## Phase 8 – Mehrsprachigkeit
-- [ ] i18n DE/CS/SK/EN, Sprachumschalter, komplette Übersetzung
+- [x] i18n DE/CS/SK/EN + Sprachumschalter (Kernseiten übersetzt, weitere Seiten folgen)
