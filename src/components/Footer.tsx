@@ -1,16 +1,18 @@
 import { Link } from "react-router-dom";
 import { Instagram, Facebook } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const footerLinks = [
-  { label: "Startseite", href: "/" },
-  { label: "Angelplätze", href: "/#plaetze" },
-  { label: "Teichordnung", href: "/teichordnung" },
-  { label: "Anfahrt", href: "/anfahrt" },
-  { label: "Kontakt", href: "/kontakt" },
-  { label: "Impressum", href: "/impressum" },
+  { key: "nav.home", href: "/" },
+  { key: "footer.spots", href: "/#plaetze" },
+  { key: "nav.rules", href: "/teichordnung" },
+  { key: "nav.directions", href: "/anfahrt" },
+  { key: "nav.contact", href: "/kontakt" },
+  { key: "footer.imprint", href: "/impressum" },
 ];
 
 const Footer = () => {
+  const { t } = useTranslation();
   return (
     <footer className="bg-foreground text-background">
       <div className="max-w-7xl mx-auto px-8 md:px-16 lg:px-24 py-16 md:py-20">
@@ -21,23 +23,23 @@ const Footer = () => {
               Bucht <span className="text-accent italic">M1</span>
             </Link>
             <p className="font-body text-sm text-background/50 mt-4 leading-relaxed max-w-xs">
-              Exklusives Karpfenangeln in Ungarn. 9 Angelplätze mit Hütte, 9.6 Hektar, privater Zugang.
+              {t("footer.tagline")}
             </p>
           </div>
 
           {/* Navigation */}
           <div>
             <span className="font-body text-[10px] tracking-[0.3em] uppercase text-background/40 mb-5 block">
-              Navigation
+              {t("footer.navigation")}
             </span>
             <nav className="flex flex-col gap-3">
               {footerLinks.map((link) => (
                 <Link
-                  key={link.label}
+                  key={link.key}
                   to={link.href}
                   className="font-body text-sm text-background/60 hover:text-accent transition-colors duration-300"
                 >
-                  {link.label}
+                  {t(link.key)}
                 </Link>
               ))}
             </nav>
@@ -46,7 +48,7 @@ const Footer = () => {
           {/* Contact */}
           <div>
             <span className="font-body text-[10px] tracking-[0.3em] uppercase text-background/40 mb-5 block">
-              Kontakt
+              {t("footer.contact")}
             </span>
             <div className="flex flex-col gap-3">
               <a

@@ -5,13 +5,15 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import NotificationBell from "@/components/NotificationBell";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 const navLinks = [
-  { label: "Startseite", href: "/" },
-  { label: "Teichordnung", href: "/teichordnung" },
-  { label: "Anfahrt", href: "/anfahrt" },
-  { label: "Plätze", href: "/#plaetze" },
-  { label: "Kontakt", href: "/kontakt" },
+  { key: "home", href: "/" },
+  { key: "rules", href: "/teichordnung" },
+  { key: "directions", href: "/anfahrt" },
+  { key: "spots", href: "/#plaetze" },
+  { key: "contact", href: "/kontakt" },
 ];
 
 const Navbar = () => {
@@ -21,6 +23,7 @@ const Navbar = () => {
   const { user } = useAuth();
   const { isAdmin } = useAdmin();
   const location = useLocation();
+  const { t } = useTranslation();
 
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 60));
 
@@ -60,28 +63,28 @@ const Navbar = () => {
           {navLinks.map((link) =>
             isHashLink(link.href) && location.pathname !== "/" ? (
               <Link
-                key={link.label}
+                key={link.key}
                 to={link.href}
                 className="font-body text-[11px] tracking-[0.2em] uppercase text-muted-foreground hover:text-accent transition-colors duration-300"
               >
-                {link.label}
+                {t(`nav.${link.key}`)}
               </Link>
             ) : isHashLink(link.href) ? (
               <a
-                key={link.label}
+                key={link.key}
                 href={`#${link.href.split("#")[1]}`}
                 onClick={() => handleNavClick(link.href)}
                 className="font-body text-[11px] tracking-[0.2em] uppercase text-muted-foreground hover:text-accent transition-colors duration-300"
               >
-                {link.label}
+                {t(`nav.${link.key}`)}
               </a>
             ) : (
               <Link
-                key={link.label}
+                key={link.key}
                 to={link.href}
                 className="font-body text-[11px] tracking-[0.2em] uppercase text-muted-foreground hover:text-accent transition-colors duration-300"
               >
-                {link.label}
+                {t(`nav.${link.key}`)}
               </Link>
             )
           )}
@@ -96,12 +99,14 @@ const Navbar = () => {
             </Link>
           )}
 
+          <LanguageSwitcher />
+
           {user && <NotificationBell />}
 
           <Link
             to={user ? "/account" : "/login"}
             className="p-2 text-muted-foreground hover:text-accent transition-colors duration-300"
-            title={user ? "Mein Konto" : "Anmelden"}
+            title={user ? t("nav.account") : t("nav.login")}
           >
             <User size={18} strokeWidth={1.5} />
           </Link>
@@ -110,18 +115,21 @@ const Navbar = () => {
             to="/booking"
             className="ml-4 px-7 py-2.5 font-body text-[11px] tracking-[0.15em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light transition-colors duration-300"
           >
-            Jetzt buchen
+            {t("nav.book")}
           </Link>
         </nav>
 
         {/* Mobile toggle */}
+        <div className="md:hidden flex items-center gap-2">
+        <LanguageSwitcher />
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden p-2 text-foreground/70"
-          aria-label="Menü"
+          className="p-2 text-foreground/70"
+          aria-label={t("nav.menu")}
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
@@ -136,21 +144,21 @@ const Navbar = () => {
             {navLinks.map((link) =>
               isHashLink(link.href) ? (
                 <a
-                  key={link.label}
+                  key={link.key}
                   href={link.href}
                   onClick={() => handleNavClick(link.href)}
                   className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-accent py-3 border-b border-border/20 transition-colors duration-300"
                 >
-                  {link.label}
+                  {t(`nav.${link.key}`)}
                 </a>
               ) : (
                 <Link
-                  key={link.label}
+                  key={link.key}
                   to={link.href}
                   onClick={() => setMobileOpen(false)}
                   className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-accent py-3 border-b border-border/20 transition-colors duration-300"
                 >
-                  {link.label}
+                  {t(`nav.${link.key}`)}
                 </Link>
               )
             )}
@@ -170,7 +178,7 @@ const Navbar = () => {
               onClick={() => setMobileOpen(false)}
               className="font-body text-sm tracking-[0.1em] uppercase text-muted-foreground hover:text-accent py-3 border-b border-border/20 transition-colors duration-300"
             >
-              {user ? "Mein Konto" : "Anmelden"}
+              {user ? t("nav.account") : t("nav.login")}
             </Link>
 
             <Link
@@ -178,7 +186,7 @@ const Navbar = () => {
               onClick={() => setMobileOpen(false)}
               className="mt-3 px-6 py-3 text-center font-body text-xs tracking-[0.1em] uppercase font-semibold bg-primary text-primary-foreground"
             >
-              Jetzt buchen
+              {t("nav.book")}
             </Link>
           </nav>
         </motion.div>

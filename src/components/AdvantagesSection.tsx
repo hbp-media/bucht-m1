@@ -1,29 +1,16 @@
 import { motion } from "framer-motion";
 import { MapPin, Home, Lock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import lakeHero from "@/assets/lake-hero.jpg";
 
 const features = [
-  {
-    icon: MapPin,
-    number: "01",
-    title: "9 Angelplätze mit Hütte",
-    description: "Großzügige, voneinander getrennte Spots mit direktem Wasserzugang und eigenem Steg.",
-  },
-  {
-    icon: Home,
-    number: "02",
-    title: "Fischerhütten",
-    description: "Komfortable Unterkünfte direkt am Wasser – für mehrtägige Sessions ausgestattet.",
-  },
-  {
-    icon: Lock,
-    number: "03",
-    title: "Private Anlage",
-    description: "Exklusiver Zugang nur für gebuchte Angler. Keine Tagesgäste, keine Störungen.",
-  },
+  { icon: MapPin, number: "01", key: "f1" },
+  { icon: Home, number: "02", key: "f2" },
+  { icon: Lock, number: "03", key: "f3" },
 ];
 
 const AdvantagesSection = () => {
+  const { t } = useTranslation();
   return (
     <section className="relative min-h-screen flex flex-col md:flex-row overflow-hidden">
       {/* Left: Content */}
@@ -39,7 +26,7 @@ const AdvantagesSection = () => {
           >
             <div className="w-12 h-px bg-accent" />
             <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-              Das Erlebnis
+              {t("advantages.eyebrow")}
             </span>
           </motion.div>
 
@@ -50,16 +37,16 @@ const AdvantagesSection = () => {
             transition={{ duration: 0.8, delay: 0.1 }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            Mehr als
+            {t("advantages.headline1")}
             <br />
-            <span className="italic text-primary">nur Angeln.</span>
+            <span className="italic text-primary">{t("advantages.headline2")}</span>
           </motion.h2>
 
           {/* Feature blocks stacked */}
           <div className="space-y-10">
             {features.map((feature, i) => (
               <motion.div
-                key={feature.title}
+                key={t(`advantages.${feature.key}Title`)}
                 className="group flex gap-6 cursor-default"
                 initial={{ opacity: 0, x: -40 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -79,11 +66,11 @@ const AdvantagesSection = () => {
                   <div className="flex items-center gap-3 mb-2">
                     <feature.icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
                     <h3 className="font-display text-lg md:text-xl text-foreground group-hover:text-primary transition-colors duration-300">
-                      {feature.title}
+                      {t(`advantages.${feature.key}Title`)}
                     </h3>
                   </div>
                   <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-xs">
-                    {feature.description}
+                    {t(`advantages.${feature.key}Desc`)}
                   </p>
                 </div>
               </motion.div>
