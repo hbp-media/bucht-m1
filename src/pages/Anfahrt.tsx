@@ -137,10 +137,10 @@ const Anfahrt = () => {
               </div>
               <div>
                 <h2 className="font-display text-xl text-foreground">
-                  Autobahn
+{t("directions.highwayTitle")}
                 </h2>
                 <p className="font-body text-xs text-muted-foreground tracking-wide uppercase">
-                  Vignettenpflicht
+{t("directions.highwaySub")}
                 </p>
               </div>
             </div>

@@ -3,9 +3,11 @@ import { Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 
 const Booking = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   const handleOnlineBooking = () => {
@@ -31,15 +33,15 @@ const Booking = () => {
             <div className="flex items-center justify-center gap-4 mb-8">
               <div className="w-12 h-px bg-accent" />
               <span className="font-body text-[11px] tracking-[0.5em] uppercase text-accent">
-                Reservierung
+{t("bookingPage.eyebrow")}
               </span>
               <div className="w-12 h-px bg-accent" />
             </div>
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-foreground mb-4">
-              Platz <span className="italic text-primary">buchen</span>
+              {t("bookingPage.title1")} <span className="italic text-primary">{t("bookingPage.title2")}</span>
             </h1>
             <p className="font-body text-sm text-muted-foreground max-w-md mx-auto">
-              Reserviere deinen Angelplatz bequem online. Buchungen sind nur mit Anmeldung möglich.
+{t("bookingPage.intro")}
             </p>
           </motion.div>
 
@@ -58,13 +60,13 @@ const Booking = () => {
                 <Globe className="w-6 h-6 text-primary" strokeWidth={1.5} />
               </div>
               <h2 className="font-display text-xl text-foreground mb-3">
-                Online buchen
+{t("bookingPage.onlineTitle")}
               </h2>
               <p className="font-body text-sm text-muted-foreground mb-6">
-                Nutze unser Buchungssystem und reserviere bequem online.
+{t("bookingPage.onlineDesc")}
               </p>
               <span className="inline-block px-8 py-3 font-body text-xs tracking-[0.2em] uppercase font-semibold bg-primary text-primary-foreground hover:bg-olive-light transition-colors duration-300">
-                Zum Buchungssystem
+{t("bookingPage.cta")}
               </span>
             </motion.button>
           </div>
