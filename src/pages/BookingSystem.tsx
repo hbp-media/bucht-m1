@@ -5,6 +5,7 @@ import { Check, Minus, Plus, Users, UserPlus, Baby, UtensilsCrossed } from "luci
 import { DateRange } from "react-day-picker";
 import { differenceInCalendarDays, format, getDay } from "date-fns";
 import { de } from "date-fns/locale";
+import i18n from "i18next";
 
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -264,6 +265,7 @@ const BookingSystem = () => {
       email: contact.email.trim(),
       phone: contact.phone.trim(),
       message: contact.message.trim(),
+      language: (i18n.language || "de").slice(0, 2),
     };
 
     try {
