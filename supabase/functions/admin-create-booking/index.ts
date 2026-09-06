@@ -24,6 +24,7 @@ const BodySchema = z.object({
   admin_notes: z.string().max(1000).default(''),
   price_override: z.number().nonnegative().nullable().optional(),
   payment_state: z.enum(['unpaid', 'deposit_paid', 'paid']).default('unpaid'),
+  language: z.enum(['de', 'en', 'cs', 'sk']).default('de'),
   send_email: z.boolean().default(false),
 });
 
@@ -150,6 +151,7 @@ Deno.serve(async (req) => {
         email: b.email,
         phone: b.phone,
         admin_notes: b.admin_notes,
+        language: b.language,
         license_price: pricing.license_price,
         fishing_fee_price: pricing.fishing_fee_price,
         solo_surcharge_price: pricing.solo_surcharge_price,

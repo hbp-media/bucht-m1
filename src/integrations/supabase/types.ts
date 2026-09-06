@@ -76,6 +76,7 @@ export type Database = {
           first_name: string
           fishing_fee_price: number
           id: string
+          language: string
           last_name: string
           license_price: number
           message: string | null
@@ -122,6 +123,7 @@ export type Database = {
           first_name: string
           fishing_fee_price?: number
           id?: string
+          language?: string
           last_name: string
           license_price?: number
           message?: string | null
@@ -168,6 +170,7 @@ export type Database = {
           first_name?: string
           fishing_fee_price?: number
           id?: string
+          language?: string
           last_name?: string
           license_price?: number
           message?: string | null

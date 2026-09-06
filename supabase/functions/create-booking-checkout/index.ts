@@ -29,6 +29,7 @@ const BodySchema = z.object({
     email: z.string().email().max(200),
     phone: z.string().min(3).max(40),
     message: z.string().max(1000).optional().default(''),
+    language: z.enum(['de', 'en', 'cs', 'sk']).optional().default('de'),
   }),
 });
 
@@ -116,6 +117,7 @@ Deno.serve(async (req) => {
         email: booking.email,
         phone: booking.phone,
         message: booking.message,
+        language: booking.language ?? 'de',
         license_price: pricing.license_price,
         fishing_fee_price: pricing.fishing_fee_price,
         solo_surcharge_price: pricing.solo_surcharge_price,

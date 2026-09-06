@@ -15,6 +15,13 @@
       "when": 1788432785505,
       "tag": "0001_expire_pre_reserved_bookings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788703286835,
+      "tag": "0002_add_booking_language",
+      "breakpoints": true
     }
   ]
 }

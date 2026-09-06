@@ -58,6 +58,7 @@ const AdminManualBooking = ({ onCreated, onClose }: Props) => {
     admin_notes: "",
     price_override: "",
     payment_state: "unpaid" as "unpaid" | "deposit_paid" | "paid",
+    language: "de" as "de" | "en" | "cs" | "sk",
     send_email: false,
   });
   const [selectedExtras, setSelectedExtras] = useState<Record<string, number>>({});
@@ -114,6 +115,7 @@ const AdminManualBooking = ({ onCreated, onClose }: Props) => {
         admin_notes: form.admin_notes,
         price_override: form.price_override === "" ? null : Number(form.price_override),
         payment_state: form.payment_state,
+        language: form.language,
         send_email: form.send_email,
       },
     });
@@ -282,6 +284,21 @@ const AdminManualBooking = ({ onCreated, onClose }: Props) => {
             onChange={(e) => set({ price_override: e.target.value })}
           />
         </div>
+      </div>
+
+      <div>
+        <Label className="font-body text-xs uppercase tracking-[0.15em]">Sprache des Gastes (E-Mails)</Label>
+        <Select value={form.language} onValueChange={(v) => set({ language: v as any })}>
+          <SelectTrigger className="mt-1.5">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="de">Deutsch</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="cs">Čeština</SelectItem>
+            <SelectItem value="sk">Slovenčina</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
