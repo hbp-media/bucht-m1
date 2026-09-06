@@ -1,20 +1,24 @@
-// Buchungs-E-Mails: admin_new, approved (mit Zahlungslink), rejected
-// Wichtig: KEIN automatischer Kunden-Mail bei Anfrage. Nur Admin-Benachrichtigung.
+// Buchungs-E-Mails. Kunden-Mails werden in der Sprache der Buchung (bookings.language)
+// verschickt: DE / EN / CS / SK, Fallback Deutsch. Admin-Mails bleiben auf Deutsch.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import {
+  fmtDate,
+  fmtDateTime,
+  normalizeLang,
+  translator,
+  type Lang,
+  type T,
+} from "../_shared/email-i18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface AdminNewRequest {
-  type: "admin_new";
-  booking_id: string;
-}
-
-interface CustomerDecisionRequest {
+interface EmailRequest {
   type:
+    | "admin_new"
     | "approved"
     | "approved_pay_now"
     | "rejected"
@@ -27,25 +31,14 @@ interface CustomerDecisionRequest {
     | "deposit_received"
     | "final_payment_request"
     | "final_payment_received"
-    | "cancelled_deposit_forfeit";
+    | "cancelled_deposit_forfeit"
+    | "onsite_no_show_cancelled";
   booking_id: string;
   payment_url?: string;
 }
 
-type EmailRequest = AdminNewRequest | CustomerDecisionRequest;
-
-const fmt = (s: string) =>
-  new Date(s).toLocaleDateString("de-AT", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-
-const ACC_LABEL: Record<string, string> = {
-  none: "Ohne Unterkunft",
-  hut: "Fischerhütte",
-  caravan: "Wohnwagen",
-};
+const fmtDe = (s: string) =>
+  new Date(s).toLocaleDateString("de-AT", { day: "2-digit", month: "long", year: "numeric" });
 
 interface BookingDetails {
   id: string;
@@ -72,6 +65,7 @@ interface BookingDetails {
   extras: any;
   spot_name: string;
   booking_number: string | null;
+  language: Lang;
 }
 
 const fetchBooking = async (
@@ -87,46 +81,49 @@ const fetchBooking = async (
     console.error("fetchBooking error", error);
     return null;
   }
+  const d = data as any;
   return {
-    id: data.id,
-    first_name: data.first_name,
-    last_name: data.last_name,
-    email: data.email,
-    phone: data.phone,
-    message: data.message ?? "",
-    start_date: data.start_date,
-    end_date: data.end_date,
-    nights: data.nights ?? 0,
-    persons: data.persons,
-    companions: data.companions ?? 0,
-    booking_mode: data.booking_mode ?? "weekend",
-    accommodation_type: data.accommodation_type ?? "none",
-    accommodation_persons: data.accommodation_persons ?? 0,
-    all_inclusive: !!data.all_inclusive,
-    license_price: Number(data.license_price ?? 0),
-    accommodation_price: Number(data.accommodation_price ?? 0),
-    cleaning_price: Number(data.cleaning_price ?? 0),
-    all_inclusive_price: Number(data.all_inclusive_price ?? 0),
-    extras_price: Number(data.extras_price ?? 0),
-    total_price: Number(data.total_price ?? 0),
-    extras: data.extras ?? [],
-    spot_name: (data as any).fishing_spots?.name ?? "Platz",
+    id: d.id,
+    first_name: d.first_name,
+    last_name: d.last_name,
+    email: d.email,
+    phone: d.phone,
+    message: d.message ?? "",
+    start_date: d.start_date,
+    end_date: d.end_date,
+    nights: d.nights ?? 0,
+    persons: d.persons,
+    companions: d.companions ?? 0,
+    booking_mode: d.booking_mode ?? "weekend",
+    accommodation_type: d.accommodation_type ?? "none",
+    accommodation_persons: d.accommodation_persons ?? 0,
+    all_inclusive: !!d.all_inclusive,
+    license_price: Number(d.license_price ?? 0),
+    accommodation_price: Number(d.accommodation_price ?? 0),
+    cleaning_price: Number(d.cleaning_price ?? 0),
+    all_inclusive_price: Number(d.all_inclusive_price ?? 0),
+    extras_price: Number(d.extras_price ?? 0),
+    total_price: Number(d.total_price ?? 0),
+    extras: d.extras ?? [],
+    spot_name: d.fishing_spots?.name ?? "Platz",
+    booking_number: d.booking_number ?? null,
+    language: normalizeLang(d.language),
   };
 };
 
-const buildPriceRows = (b: BookingDetails) => {
+const accLabel = (t: T, type: string) => t(`acc_${type}`) || type;
+
+const buildPriceRows = (b: BookingDetails, t: T) => {
   const rows: { label: string; value: number }[] = [];
   if (b.license_price > 0)
     rows.push({
-      label: b.booking_mode === "weekend" ? "Wochenend-Karte" : "Fischerlizenz (72h+)",
+      label: b.booking_mode === "weekend" ? t("weekendCard") : t("license"),
       value: b.license_price,
     });
   if (b.accommodation_price > 0)
-    rows.push({ label: ACC_LABEL[b.accommodation_type], value: b.accommodation_price });
-  if (b.cleaning_price > 0)
-    rows.push({ label: "Endreinigung", value: b.cleaning_price });
-  if (b.all_inclusive_price > 0)
-    rows.push({ label: "All Inclusive", value: b.all_inclusive_price });
+    rows.push({ label: accLabel(t, b.accommodation_type), value: b.accommodation_price });
+  if (b.cleaning_price > 0) rows.push({ label: t("cleaning"), value: b.cleaning_price });
+  if (b.all_inclusive_price > 0) rows.push({ label: t("allInclusive"), value: b.all_inclusive_price });
   if (Array.isArray(b.extras)) {
     for (const e of b.extras) {
       const label = e.quantity && e.quantity > 1 ? `${e.name} (${e.quantity})` : e.name;
@@ -136,9 +133,8 @@ const buildPriceRows = (b: BookingDetails) => {
   return rows;
 };
 
-const renderPriceTable = (b: BookingDetails) => {
-  const rows = buildPriceRows(b);
-  const items = rows
+const renderPriceTable = (b: BookingDetails, t: T) => {
+  const items = buildPriceRows(b, t)
     .map(
       (r) =>
         `<tr><td style="padding:6px 0;font-size:13px;color:#1a1a1a;">${r.label}</td><td style="padding:6px 0;font-size:13px;color:#1a1a1a;text-align:right;">€${r.value.toFixed(2)}</td></tr>`,
@@ -149,162 +145,22 @@ const renderPriceTable = (b: BookingDetails) => {
       ${items}
       <tr><td colspan="2" style="padding:8px 0;border-top:1px solid #e5e5e0;"></td></tr>
       <tr>
-        <td style="padding:6px 0;font-size:14px;font-weight:bold;color:#4a5a3a;">Gesamtsumme</td>
+        <td style="padding:6px 0;font-size:14px;font-weight:bold;color:#4a5a3a;">${t("totalSum")}</td>
         <td style="padding:6px 0;font-size:14px;font-weight:bold;color:#4a5a3a;text-align:right;">€${b.total_price.toFixed(2)}</td>
       </tr>
     </table>`;
 };
 
-const adminEmail = (b: BookingDetails) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
-  return {
-    subject: `Neue Buchungsanfrage: ${b.first_name} ${b.last_name} · ${b.spot_name}`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:30px 20px;color:#1a1a1a;">
-        <h1 style="font-size:20px;color:#4a5a3a;margin:0 0 16px;">Neue Buchungsanfrage</h1>
-        <p style="font-size:14px;line-height:1.5;margin:0 0 18px;">
-          ${b.first_name} ${b.last_name} hat eine Anfrage gestellt:
-        </p>
-        <div style="background:#f5f5f0;padding:16px 18px;margin:0 0 20px;border-left:3px solid #8a7530;">
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Platz:</strong> ${b.spot_name}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Zeitraum:</strong> ${dateRange} (${b.nights} N)</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Modus:</strong> ${b.booking_mode === "weekend" ? "Wochenende" : "Frei gewählt"}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Personen:</strong> ${b.persons} Angler${b.companions ? ` + ${b.companions} Begleitung` : ""}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Unterkunft:</strong> ${ACC_LABEL[b.accommodation_type]}${b.accommodation_persons ? ` (${b.accommodation_persons} P)` : ""}</p>
-          ${b.all_inclusive ? `<p style="margin:0 0 6px;font-size:13px;"><strong>All Inclusive:</strong> Ja</p>` : ""}
-        </div>
+const shell = (inner: string, t: T, width = 560) => `
+  <div style="font-family:Arial,sans-serif;max-width:${width}px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
+    ${inner}
+    <p style="font-size:13px;color:#666;margin-top:24px;">${t("footer")}</p>
+  </div>`;
 
-        <h3 style="font-size:14px;color:#4a5a3a;margin:0 0 10px;">Preisaufstellung</h3>
-        ${renderPriceTable(b)}
-
-        <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Kontakt</h3>
-        <p style="margin:0 0 6px;font-size:13px;"><strong>E-Mail:</strong> <a href="mailto:${b.email}">${b.email}</a></p>
-        <p style="margin:0 0 6px;font-size:13px;"><strong>Telefon:</strong> <a href="tel:${b.phone}">${b.phone}</a></p>
-        ${b.message ? `<p style="margin:12px 0 0;font-size:13px;font-style:italic;background:#f5f5f0;padding:10px;">„${b.message}"</p>` : ""}
-
-        <p style="font-size:12px;color:#888;margin-top:24px;">Bitte im Admin-Bereich annehmen oder ablehnen.</p>
-      </div>`,
-    text: `Neue Anfrage: ${b.first_name} ${b.last_name} – ${b.spot_name} (${dateRange}). Gesamt €${b.total_price.toFixed(2)}. E-Mail ${b.email} · Tel ${b.phone}`,
-  };
-};
-
-const approvedEmail = (b: BookingDetails, paymentUrl?: string) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
-  const paymentBlock = paymentUrl
-    ? `<div style="text-align:center;margin:28px 0;">
-         <a href="${paymentUrl}" style="display:inline-block;background:#4a5a3a;color:#fff;text-decoration:none;padding:14px 32px;font-size:14px;letter-spacing:0.05em;">Jetzt sicher bezahlen</a>
-       </div>
-       <p style="font-size:13px;line-height:1.5;color:#666;margin:0 0 16px;">Erst nach Zahlungseingang ist deine Reservierung verbindlich gesichert.</p>`
-    : `<p style="font-size:14px;line-height:1.5;">Wir senden dir die Zahlungsdetails in Kürze separat zu.</p>`;
-  return {
-    subject: "Deine Buchung wurde bestätigt",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Buchung bestätigt ✓</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">Wir freuen uns, deine Buchung für <strong>${b.spot_name}</strong> bestätigen zu können.</p>
-        <div style="background:#f5f5f0;padding:18px;margin:20px 0;border-left:3px solid #4a5a3a;">
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Zeitraum:</strong> ${dateRange}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Personen:</strong> ${b.persons} Angler${b.companions ? ` + ${b.companions} Begleitung` : ""}</p>
-          <p style="margin:0 0 6px;font-size:13px;"><strong>Unterkunft:</strong> ${ACC_LABEL[b.accommodation_type]}</p>
-        </div>
-        <h3 style="font-size:14px;color:#4a5a3a;margin:20px 0 10px;">Preisaufstellung</h3>
-        ${renderPriceTable(b)}
-        ${paymentBlock}
-        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, deine Buchung für ${b.spot_name} (${dateRange}) wurde bestätigt. Gesamt €${b.total_price.toFixed(2)}.${paymentUrl ? ` Zahlung: ${paymentUrl}` : ""}`,
-  };
-};
-
-const rejectedEmail = (b: BookingDetails) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
-  return {
-    subject: "Update zu deiner Buchungsanfrage",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 20px;">Anfrage konnte nicht bestätigt werden</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">leider können wir deine Anfrage für <strong>${b.spot_name}</strong> im Zeitraum <strong>${dateRange}</strong> aktuell nicht bestätigen.</p>
-        <p style="font-size:14px;line-height:1.6;">Falls du andere Termine in Erwägung ziehst, melde dich gerne direkt bei uns – wir helfen dir gerne weiter.</p>
-        <p style="font-size:13px;color:#666;margin-top:30px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, leider können wir deine Anfrage für ${b.spot_name} (${dateRange}) nicht bestätigen.`,
-  };
-};
-
-const requestReceivedEmail = (b: BookingDetails) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
-  return {
-    subject: "Wir haben deine Buchungsanfrage erhalten",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Anfrage eingegangen</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">vielen Dank für deine Buchungsanfrage für <strong>${b.spot_name}</strong> im Zeitraum <strong>${dateRange}</strong>.</p>
-        <p style="font-size:14px;line-height:1.6;">Wir prüfen deine Anfrage und melden uns in Kürze per E-Mail mit einem Zahlungslink. Erst nach Zahlungseingang ist deine Reservierung verbindlich gesichert.</p>
-        <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Vorläufige Preisaufstellung</h3>
-        ${renderPriceTable(b)}
-        <p style="font-size:13px;color:#666;margin-top:30px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, wir haben deine Anfrage für ${b.spot_name} (${dateRange}) erhalten und melden uns in Kürze mit einem Zahlungslink.`,
-  };
-};
-
-const approvedPayNowEmail = (b: BookingDetails, siteOrigin: string) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
-  const payUrl = `${siteOrigin}/account?pay=${b.id}`;
-  return {
-    subject: "Deine Buchung wurde freigegeben – jetzt bezahlen",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Buchung freigegeben ✓</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">deine Anfrage für <strong>${b.spot_name}</strong> (${dateRange}) wurde geprüft und freigegeben. Bitte schließe die Buchung innerhalb der nächsten <strong>60 Minuten</strong> mit der Zahlung ab – andernfalls wird der Platz wieder freigegeben.</p>
-        <h3 style="font-size:14px;color:#4a5a3a;margin:20px 0 10px;">Preisaufstellung</h3>
-        ${renderPriceTable(b)}
-        <div style="text-align:center;margin:28px 0;">
-          <a href="${payUrl}" style="display:inline-block;background:#4a5a3a;color:#fff;text-decoration:none;padding:14px 32px;font-size:14px;letter-spacing:0.05em;">Jetzt sicher bezahlen</a>
-        </div>
-        <p style="font-size:12px;color:#666;line-height:1.5;">Falls der Button nicht funktioniert, öffne diesen Link: <a href="${payUrl}">${payUrl}</a></p>
-        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, deine Buchung für ${b.spot_name} (${dateRange}) wurde freigegeben. Bitte zahle innerhalb von 60 Minuten: ${payUrl}`,
-  };
-};
-
-const paidEmail = (b: BookingDetails) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
-  return {
-    subject: "Zahlungseingang bestätigt – Buchung gesichert",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Zahlung erhalten ✓</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">vielen Dank! Wir haben deine Zahlung für <strong>${b.spot_name}</strong> (${dateRange}) erhalten. Deine Buchung ist verbindlich gesichert.</p>
-        <h3 style="font-size:14px;color:#4a5a3a;margin:20px 0 10px;">Preisaufstellung</h3>
-        ${renderPriceTable(b)}
-        <p style="font-size:13px;color:#666;margin-top:24px;">Wir freuen uns auf dich!<br/>Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, wir haben deine Zahlung für ${b.spot_name} (${dateRange}) erhalten. Deine Buchung ist gesichert.`,
-  };
-};
-
-const expiredEmail = (b: BookingDetails) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
-  return {
-    subject: "Zahlungsfrist abgelaufen",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 20px;">Zahlungsfrist abgelaufen</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">deine freigegebene Buchung für <strong>${b.spot_name}</strong> (${dateRange}) wurde nicht innerhalb der Zahlungsfrist beglichen und ist verfallen. Der Platz wurde wieder freigegeben.</p>
-        <p style="font-size:14px;line-height:1.6;">Du kannst jederzeit eine neue Anfrage stellen.</p>
-        <p style="font-size:13px;color:#666;margin-top:30px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, die Zahlungsfrist für ${b.spot_name} (${dateRange}) ist abgelaufen. Der Platz ist wieder verfügbar.`,
-  };
-};
+const h1 = (text: string, color = "#4a5a3a") =>
+  `<h1 style="font-size:22px;color:${color};margin:0 0 20px;">${text}</h1>`;
+const p = (text: string) => `<p style="font-size:14px;line-height:1.6;">${text}</p>`;
+const h3 = (text: string) => `<h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">${text}</h3>`;
 
 interface PaySettings {
   bank_holder: string;
@@ -316,163 +172,246 @@ interface PaySettings {
   cancellation_days_before: number;
 }
 
-const renderBankBlock = (s: PaySettings, amount: number, reference: string, deadline?: string) => {
+const renderBankBlock = (s: PaySettings, amount: number, reference: string, t: T, deadline?: string) => {
   const ibanDisplay = s.iban ? s.iban.replace(/(.{4})/g, "$1 ").trim() : "—";
   return `
     <div style="background:#f5f5f0;padding:18px 20px;margin:18px 0;border-left:3px solid #8a7530;">
-      <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:#4a5a3a;">Banküberweisung</p>
+      <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:#4a5a3a;">${t("bankTransfer")}</p>
       <table style="width:100%;border-collapse:collapse;font-size:13px;color:#1a1a1a;">
-        <tr><td style="padding:3px 0;width:140px;color:#666;">Empfänger</td><td style="padding:3px 0;"><strong>${s.bank_holder || "—"}</strong></td></tr>
+        <tr><td style="padding:3px 0;width:150px;color:#666;">${t("recipient")}</td><td style="padding:3px 0;"><strong>${s.bank_holder || "—"}</strong></td></tr>
         <tr><td style="padding:3px 0;color:#666;">IBAN</td><td style="padding:3px 0;font-family:monospace;"><strong>${ibanDisplay}</strong></td></tr>
         <tr><td style="padding:3px 0;color:#666;">BIC</td><td style="padding:3px 0;font-family:monospace;"><strong>${s.bic || "—"}</strong></td></tr>
-        <tr><td style="padding:3px 0;color:#666;">Betrag</td><td style="padding:3px 0;"><strong style="color:#4a5a3a;font-size:15px;">€${amount.toFixed(2)}</strong></td></tr>
-        <tr><td style="padding:3px 0;color:#666;">Verwendungszweck</td><td style="padding:3px 0;font-family:monospace;"><strong>${reference}</strong></td></tr>
-        ${deadline ? `<tr><td style="padding:3px 0;color:#666;">Frist</td><td style="padding:3px 0;color:#a02020;"><strong>${deadline}</strong></td></tr>` : ""}
+        <tr><td style="padding:3px 0;color:#666;">${t("amount")}</td><td style="padding:3px 0;"><strong style="color:#4a5a3a;font-size:15px;">€${amount.toFixed(2)}</strong></td></tr>
+        <tr><td style="padding:3px 0;color:#666;">${t("reference")}</td><td style="padding:3px 0;font-family:monospace;"><strong>${reference}</strong></td></tr>
+        ${deadline ? `<tr><td style="padding:3px 0;color:#666;">${t("deadline")}</td><td style="padding:3px 0;color:#a02020;"><strong>${deadline}</strong></td></tr>` : ""}
       </table>
     </div>`;
 };
 
-const fmtDateTime = (s: string) =>
-  new Date(s).toLocaleString("de-AT", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+// ─── Admin (immer Deutsch) ──────────────────────────────────────────────────
+const adminEmail = (b: BookingDetails) => {
+  const t = translator("de");
+  const dateRange = `${fmtDe(b.start_date)} – ${fmtDe(b.end_date)}`;
+  return {
+    subject: `Neue Buchungsanfrage: ${b.first_name} ${b.last_name} · ${b.spot_name}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:30px 20px;color:#1a1a1a;">
+        <h1 style="font-size:20px;color:#4a5a3a;margin:0 0 16px;">Neue Buchungsanfrage</h1>
+        <div style="background:#f5f5f0;padding:16px 18px;margin:0 0 20px;border-left:3px solid #8a7530;">
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Platz:</strong> ${b.spot_name}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Zeitraum:</strong> ${dateRange} (${b.nights} N)</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Personen:</strong> ${b.persons} Angler${b.companions ? ` + ${b.companions} Begleitung` : ""}</p>
+          <p style="margin:0 0 6px;font-size:13px;"><strong>Sprache Gast:</strong> ${b.language.toUpperCase()}</p>
+        </div>
+        <h3 style="font-size:14px;color:#4a5a3a;margin:0 0 10px;">Preisaufstellung</h3>
+        ${renderPriceTable(b, t)}
+        <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Kontakt</h3>
+        <p style="margin:0 0 6px;font-size:13px;"><strong>E-Mail:</strong> <a href="mailto:${b.email}">${b.email}</a></p>
+        <p style="margin:0 0 6px;font-size:13px;"><strong>Telefon:</strong> <a href="tel:${b.phone}">${b.phone}</a></p>
+        ${b.message ? `<p style="margin:12px 0 0;font-size:13px;font-style:italic;background:#f5f5f0;padding:10px;">„${b.message}"</p>` : ""}
+      </div>`,
+    text: `Neue Anfrage: ${b.first_name} ${b.last_name} – ${b.spot_name} (${dateRange}). Gesamt €${b.total_price.toFixed(2)}.`,
+  };
+};
+
+// ─── Kunden-Mails (übersetzt) ───────────────────────────────────────────────
+const ctx = (b: BookingDetails) => {
+  const t = translator(b.language);
+  const range = `${fmtDate(b.start_date, b.language)} – ${fmtDate(b.end_date, b.language)}`;
+  return { t, range, name: b.first_name, spot: b.spot_name };
+};
 
 const depositRequestEmail = (b: BookingDetails, s: PaySettings) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  const { t, range, name, spot } = ctx(b);
   const deposit = Math.round(b.total_price * s.deposit_percent) / 100;
   const deadlineHours = s.deposit_deadline_hours || 168;
-  const deadline = new Date(Date.now() + deadlineHours * 3600_000);
-  const deadlineDays = Math.round(deadlineHours / 24);
+  const deadlineDate = new Date(Date.now() + deadlineHours * 3600_000);
+  const days = Math.round(deadlineHours / 24);
   const start = new Date(b.start_date);
   const dd = String(start.getDate()).padStart(2, "0");
   const mm = String(start.getMonth() + 1).padStart(2, "0");
   const ref = `${b.booking_number ?? "BM1"} ${dd}.${mm}/${start.getFullYear()}`;
+  const deadline = fmtDateTime(deadlineDate.toISOString(), b.language);
   return {
-    subject: `Vorreservierung ${b.booking_number ?? ""} – Anzahlung €${deposit.toFixed(2)}`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Vorreservierung bestätigt ✓</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">
-          dein Platz <strong>${b.spot_name}</strong> (${dateRange}) ist für dich
-          <strong>vorreserviert</strong>. Damit die Reservierung fix wird, überweise bitte die
-          <strong>Anzahlung von €${deposit.toFixed(2)} (${s.deposit_percent} %)</strong> innerhalb von
-          <strong>${deadlineDays} Tagen</strong>. Der Restbetrag wird <strong>vor Ort bei der Anreise</strong> bezahlt.
-        </p>
-        ${renderBankBlock(s, deposit, ref, fmtDateTime(deadline.toISOString()))}
-        <p style="font-size:13px;line-height:1.6;background:#f6f4ee;border-left:3px solid #6f7e44;padding:12px 14px;">
-          <strong>Verwendungszweck:</strong> ${ref}<br />
-          Bitte genau so angeben, sonst können wir die Zahlung nicht zuordnen.
-        </p>
-        <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Gesamtaufstellung</h3>
-        ${renderPriceTable(b)}
-        <h3 style="font-size:14px;color:#4a5a3a;margin:24px 0 10px;">Anfahrt</h3>
-        <p style="font-size:13px;line-height:1.6;">
-          Bucht M1 · H-9221 Level, Ungarn.<br />
-          Route und Wegbeschreibung: <a href="https://buchtm1.purtuc.at/anfahrt" style="color:#6f7e44;">buchtm1.purtuc.at/anfahrt</a>
-        </p>
-        <p style="font-size:12px;line-height:1.6;color:#888;margin-top:24px;">
-          Hinweis: Die Anzahlung wird in keinem Fall rückerstattet. Geht die Anzahlung nicht
-          innerhalb von ${deadlineDays} Tagen ein, wird die Vorreservierung automatisch aufgehoben
-          und der Platz wieder freigegeben.
-        </p>
-        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · Wolfgang: +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, dein Platz ist vorreserviert. Bitte überweise die Anzahlung von €${deposit.toFixed(2)} an ${s.bank_holder}, IBAN ${s.iban}, BIC ${s.bic}. Verwendungszweck: ${ref}. Frist: ${fmtDateTime(deadline.toISOString())}. Restbetrag vor Ort. Die Anzahlung wird nicht rückerstattet.`,
+    subject: t("depositSubject", { no: b.booking_number ?? "", deposit: deposit.toFixed(2) }),
+    html: shell(
+      `${h1(t("depositTitle"))}
+       ${p(t("hello", { name }))}
+       ${p(t("depositBody", { spot, range, deposit: deposit.toFixed(2), percent: s.deposit_percent, days }))}
+       ${renderBankBlock(s, deposit, ref, t, deadline)}
+       <p style="font-size:13px;line-height:1.6;background:#f6f4ee;border-left:3px solid #6f7e44;padding:12px 14px;">${t("depositRefNote", { ref })}</p>
+       ${h3(t("priceHeading"))}
+       ${renderPriceTable(b, t)}
+       ${h3(t("directions"))}
+       <p style="font-size:13px;line-height:1.6;">${t("directionsText")}</p>
+       <p style="font-size:12px;line-height:1.6;color:#888;margin-top:24px;">${t("depositWarning", { days })}</p>`,
+      t,
+      600,
+    ),
+    text: t("depositText", {
+      name,
+      deposit: deposit.toFixed(2),
+      holder: s.bank_holder,
+      iban: s.iban,
+      bic: s.bic,
+      ref,
+      deadline,
+    }),
   };
 };
 
 const depositReceivedEmail = (b: BookingDetails, s: PaySettings) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
-  const finalDue = b.total_price - (Math.round(b.total_price * s.deposit_percent) / 100);
+  const { t, range, name, spot } = ctx(b);
+  const final = b.total_price - Math.round(b.total_price * s.deposit_percent) / 100;
   return {
-    subject: "Anzahlung erhalten – Buchung gesichert",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Anzahlung erhalten ✓</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">
-          deine Anzahlung für <strong>${b.spot_name}</strong> (${dateRange}) ist bei uns eingegangen.
-          Die Reservierung ist nun verbindlich gesichert.
-        </p>
-        <p style="font-size:14px;line-height:1.6;">
-          Der <strong>Restbetrag von €${finalDue.toFixed(2)}</strong> wird <strong>vor Ort bei der Anreise</strong> bezahlt.
-        </p>
-        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, deine Anzahlung für ${b.spot_name} (${dateRange}) ist eingegangen. Restbetrag €${finalDue.toFixed(2)} vor Ort bei der Anreise.`,
+    subject: t("depRecSubject"),
+    html: shell(
+      `${h1(t("depRecTitle"))}${p(t("hello", { name }))}${p(t("depRecBody", { spot, range }))}${p(t("depRecFinal", { final: final.toFixed(2) }))}`,
+      t,
+    ),
+    text: t("depRecText", { name, spot, range, final: final.toFixed(2) }),
   };
 };
 
 const finalPaymentRequestEmail = (b: BookingDetails, s: PaySettings) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  const { t, name, spot } = ctx(b);
   const deposit = Math.round(b.total_price * s.deposit_percent) / 100;
-  const finalDue = b.total_price - deposit;
+  const final = b.total_price - deposit;
   const ref = `Bucht M1 / ${b.last_name} / ${b.id.slice(0, 8)}`;
   return {
-    subject: `Restzahlung für deine Buchung – €${finalDue.toFixed(2)}`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Restzahlung fällig</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">
-          deine Anreise zum <strong>${b.spot_name}</strong> am <strong>${fmt(b.start_date)}</strong> rückt näher.
-          Bitte überweise die Restzahlung von <strong>€${finalDue.toFixed(2)}</strong> bis spätestens
-          <strong>${fmt(b.start_date)}</strong> (${s.full_payment_days_before} Tage vor Anreise).
-        </p>
-        ${renderBankBlock(s, finalDue, ref)}
-        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, bitte Restzahlung €${finalDue.toFixed(2)} an ${s.bank_holder} IBAN ${s.iban} überweisen. Verwendungszweck: ${ref}.`,
+    subject: t("finReqSubject", { final: final.toFixed(2) }),
+    html: shell(
+      `${h1(t("finReqTitle"))}${p(t("hello", { name }))}${p(
+        t("finReqBody", { spot, start: fmtDate(b.start_date, b.language), final: final.toFixed(2) }),
+      )}${renderBankBlock(s, final, ref, t)}`,
+      t,
+      600,
+    ),
+    text: t("finReqText", { name, final: final.toFixed(2), ref }),
   };
 };
 
 const finalPaymentReceivedEmail = (b: BookingDetails) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  const { t, range, name, spot } = ctx(b);
   return {
-    subject: "Vollständige Zahlung erhalten – wir freuen uns auf dich",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#4a5a3a;margin:0 0 20px;">Alles bezahlt ✓</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">
-          deine Restzahlung für <strong>${b.spot_name}</strong> (${dateRange}) ist eingegangen.
-          Wir freuen uns auf deinen Besuch!
-        </p>
-        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, deine Restzahlung für ${b.spot_name} (${dateRange}) ist eingegangen.`,
+    subject: t("finRecSubject"),
+    html: shell(`${h1(t("finRecTitle"))}${p(t("hello", { name }))}${p(t("finRecBody", { spot, range }))}`, t),
+    text: t("finRecText", { name, spot, range }),
   };
 };
 
-const cancelledForfeitEmail = (b: BookingDetails) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+const cancelledForfeitEmail = (b: BookingDetails, noShow = false) => {
+  const { t, range, name, spot } = ctx(b);
   return {
-    subject: "Buchung storniert",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 20px;">Buchung storniert</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">
-          deine Buchung für <strong>${b.spot_name}</strong> (${dateRange}) wurde storniert.
-          Da die Stornierung nach Ablauf der Storno-Frist erfolgte, verfällt die geleistete Anzahlung gemäß unseren Bedingungen.
-        </p>
-        <p style="font-size:13px;color:#666;margin-top:24px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, deine Buchung für ${b.spot_name} (${dateRange}) wurde storniert. Anzahlung verfällt.`,
+    subject: t("cancelSubject"),
+    html: shell(
+      `${h1(t("cancelTitle"), "#1a1a1a")}${p(t("hello", { name }))}${p(
+        t(noShow ? "noShowBody" : "cancelBody", { spot, range }),
+      )}`,
+      t,
+      520,
+    ),
+    text: t("cancelText", { name, spot, range }),
+  };
+};
+
+const expiredEmail = (b: BookingDetails) => {
+  const { t, range, name, spot } = ctx(b);
+  return {
+    subject: t("expiredSubject"),
+    html: shell(
+      `${h1(t("expiredTitle"), "#1a1a1a")}${p(t("hello", { name }))}${p(t("expiredBody", { spot, range }))}${p(t("expiredHint"))}`,
+      t,
+      520,
+    ),
+    text: t("expiredText", { name, spot, range }),
+  };
+};
+
+const paidEmail = (b: BookingDetails) => {
+  const { t, range, name, spot } = ctx(b);
+  return {
+    subject: t("paidSubject"),
+    html: shell(
+      `${h1(t("paidTitle"))}${p(t("hello", { name }))}${p(t("paidBody", { spot, range }))}${h3(t("priceHeading"))}${renderPriceTable(b, t)}`,
+      t,
+    ),
+    text: t("paidText", { name, spot, range }),
+  };
+};
+
+const approvedEmail = (b: BookingDetails, paymentUrl?: string) => {
+  const { t, range, name, spot } = ctx(b);
+  const payBlock = paymentUrl
+    ? `<div style="text-align:center;margin:28px 0;"><a href="${paymentUrl}" style="display:inline-block;background:#4a5a3a;color:#fff;text-decoration:none;padding:14px 32px;font-size:14px;letter-spacing:0.05em;">${t("payNowCta")}</a></div>`
+    : "";
+  return {
+    subject: t("approvedSubject"),
+    html: shell(
+      `${h1(t("approvedTitle"))}${p(t("hello", { name }))}${p(t("approvedBody", { spot }))}
+       <div style="background:#f5f5f0;padding:18px;margin:20px 0;border-left:3px solid #4a5a3a;">
+         <p style="margin:0 0 6px;font-size:13px;"><strong>${t("period")}:</strong> ${range}</p>
+         <p style="margin:0 0 6px;font-size:13px;"><strong>${t("persons")}:</strong> ${b.persons} ${t("anglers")}${b.companions ? ` + ${b.companions} ${t("companionsLabel")}` : ""}</p>
+         <p style="margin:0 0 6px;font-size:13px;"><strong>${t("accommodation")}:</strong> ${accLabel(t, b.accommodation_type)}</p>
+       </div>
+       ${h3(t("priceHeading"))}${renderPriceTable(b, t)}${payBlock}`,
+      t,
+    ),
+    text: t("approvedText", { name, spot, range }),
+  };
+};
+
+const approvedPayNowEmail = (b: BookingDetails, siteOrigin: string) => {
+  const { t, range, name, spot } = ctx(b);
+  const payUrl = `${siteOrigin}/account?pay=${b.id}`;
+  return {
+    subject: t("payNowSubject"),
+    html: shell(
+      `${h1(t("payNowTitle"))}${p(t("hello", { name }))}${p(t("payNowBody", { spot, range }))}
+       ${h3(t("priceHeading"))}${renderPriceTable(b, t)}
+       <div style="text-align:center;margin:28px 0;"><a href="${payUrl}" style="display:inline-block;background:#4a5a3a;color:#fff;text-decoration:none;padding:14px 32px;font-size:14px;letter-spacing:0.05em;">${t("payNowCta")}</a></div>
+       <p style="font-size:12px;color:#666;line-height:1.5;">${t("payNowFallback")} <a href="${payUrl}">${payUrl}</a></p>`,
+      t,
+    ),
+    text: t("payNowText", { name, spot, range, url: payUrl }),
+  };
+};
+
+const rejectedEmail = (b: BookingDetails) => {
+  const { t, range, name, spot } = ctx(b);
+  return {
+    subject: t("rejectedSubject"),
+    html: shell(
+      `${h1(t("rejectedTitle"), "#1a1a1a")}${p(t("hello", { name }))}${p(t("rejectedBody", { spot, range }))}${p(t("rejectedHint"))}`,
+      t,
+      520,
+    ),
+    text: t("rejectedText", { name, spot, range }),
+  };
+};
+
+const requestReceivedEmail = (b: BookingDetails) => {
+  const { t, range, name, spot } = ctx(b);
+  return {
+    subject: t("receivedSubject"),
+    html: shell(
+      `${h1(t("receivedTitle"))}${p(t("hello", { name }))}${p(t("receivedBody", { spot, range }))}${h3(t("priceHeading"))}${renderPriceTable(b, t)}`,
+      t,
+    ),
+    text: t("receivedText", { name, spot, range }),
   };
 };
 
 const refundedEmail = (b: BookingDetails) => {
-  const dateRange = `${fmt(b.start_date)} – ${fmt(b.end_date)}`;
+  const { t, range, name, spot } = ctx(b);
   return {
-    subject: "Erstattung bearbeitet",
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:40px 20px;color:#1a1a1a;">
-        <h1 style="font-size:22px;color:#1a1a1a;margin:0 0 20px;">Erstattung bearbeitet</h1>
-        <p style="font-size:14px;line-height:1.6;">Hallo ${b.first_name},</p>
-        <p style="font-size:14px;line-height:1.6;">deine Buchung für <strong>${b.spot_name}</strong> (${dateRange}) wurde storniert und der Betrag erstattet. Die Gutschrift erfolgt über deinen ursprünglichen Zahlungsweg.</p>
-        <p style="font-size:13px;color:#666;margin-top:30px;">Bucht M1 · info@buchtm1.at · +43 699 130 35 163</p>
-      </div>`,
-    text: `Hallo ${b.first_name}, deine Buchung für ${b.spot_name} (${dateRange}) wurde erstattet.`,
+    subject: t("refundedSubject"),
+    html: shell(
+      `${h1(t("refundedTitle"), "#1a1a1a")}${p(t("hello", { name }))}${p(t("refundedBody", { spot, range }))}`,
+      t,
+      520,
+    ),
+    text: t("refundedText", { name, spot, range }),
   };
 };
 
@@ -498,164 +437,129 @@ const sendMail = async (apiKey: string, to: string[], subject: string, html: str
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const json = (payload: unknown, status = 200) =>
+    new Response(JSON.stringify(payload), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   try {
     const body = (await req.json()) as EmailRequest;
-
-    if (!body.type || !body.booking_id) {
-      return new Response(JSON.stringify({ error: "Invalid request" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!body.type || !body.booking_id) return json({ error: "Invalid request" }, 400);
 
     const smtpKey = Deno.env.get("SMTP2GO_API_KEY");
-    if (!smtpKey) {
-      return new Response(JSON.stringify({ error: "Email service not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!smtpKey) return json({ error: "Email service not configured" }, 500);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const booking = await fetchBooking(supabase, body.booking_id);
-    if (!booking) {
-      return new Response(JSON.stringify({ error: "Booking not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!booking) return json({ error: "Booking not found" }, 404);
 
     if (body.type === "admin_new") {
-      // Admin-Mails: an alle User mit Rolle 'admin'
       const { data: roles, error: rolesErr } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "admin");
       if (rolesErr) throw rolesErr;
 
-      const adminIds = (roles ?? []).map((r: any) => r.user_id);
       const adminEmails: string[] = [];
-      for (const id of adminIds) {
-        const { data: u } = await supabase.auth.admin.getUserById(id);
+      for (const r of roles ?? []) {
+        const { data: u } = await supabase.auth.admin.getUserById((r as any).user_id);
         if (u?.user?.email) adminEmails.push(u.user.email);
       }
-      // Fallback: feste Adresse
       if (adminEmails.length === 0) adminEmails.push("info@buchtm1.at");
 
       const mail = adminEmail(booking);
       await sendMail(smtpKey, adminEmails, mail.subject, mail.html, mail.text);
-
-      return new Response(JSON.stringify({ success: true, recipients: adminEmails.length }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ success: true, recipients: adminEmails.length });
     }
 
-    if (body.type === "approved") {
-      const mail = approvedEmail(booking, body.payment_url);
-      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (body.type === "rejected") {
-      const mail = rejectedEmail(booking);
-      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (body.type === "request_received") {
-      const mail = requestReceivedEmail(booking);
-      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (body.type === "approved_pay_now") {
-      const siteOrigin = Deno.env.get("SITE_URL") || "https://buchtm1.purtuc.at";
-      const mail = approvedPayNowEmail(booking, siteOrigin);
-      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (body.type === "paid") {
-      const mail = paidEmail(booking);
-      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (body.type === "expired" || body.type === "payment_expired") {
-      const mail = expiredEmail(booking);
-      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (body.type === "refunded") {
-      const mail = refundedEmail(booking);
-      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (
+    const needsSettings =
       body.type === "deposit_request" ||
       body.type === "deposit_received" ||
-      body.type === "final_payment_request" ||
-      body.type === "final_payment_received" ||
-      body.type === "cancelled_deposit_forfeit"
-    ) {
+      body.type === "final_payment_request";
+
+    let s: PaySettings = {
+      bank_holder: "",
+      iban: "",
+      bic: "",
+      deposit_deadline_hours: 168,
+      deposit_percent: 50,
+      full_payment_days_before: 14,
+      cancellation_days_before: 14,
+    };
+    if (needsSettings) {
       const { data: settings } = await supabase
         .from("payment_settings")
         .select("*")
         .limit(1)
         .maybeSingle();
-      const s: PaySettings = {
-        bank_holder: settings?.bank_holder ?? "",
-        iban: settings?.iban ?? "",
-        bic: settings?.bic ?? "",
-        deposit_deadline_hours: settings?.deposit_deadline_hours ?? 168,
-        deposit_percent: settings?.deposit_percent ?? 50,
-        full_payment_days_before: settings?.full_payment_days_before ?? 14,
-        cancellation_days_before: settings?.cancellation_days_before ?? 14,
+      const st = settings as any;
+      s = {
+        bank_holder: st?.bank_holder ?? "",
+        iban: st?.iban ?? "",
+        bic: st?.bic ?? "",
+        deposit_deadline_hours: st?.deposit_deadline_hours ?? 168,
+        deposit_percent: st?.deposit_percent ?? 50,
+        full_payment_days_before: st?.full_payment_days_before ?? 14,
+        cancellation_days_before: st?.cancellation_days_before ?? 14,
       };
-      let mail;
-      if (body.type === "deposit_request") mail = depositRequestEmail(booking, s);
-      else if (body.type === "deposit_received") mail = depositReceivedEmail(booking, s);
-      else if (body.type === "final_payment_request") mail = finalPaymentRequestEmail(booking, s);
-      else if (body.type === "final_payment_received") mail = finalPaymentReceivedEmail(booking);
-      else mail = cancelledForfeitEmail(booking);
-      await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
-    return new Response(JSON.stringify({ error: "Unknown type" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    let mail;
+    switch (body.type) {
+      case "approved":
+        mail = approvedEmail(booking, body.payment_url);
+        break;
+      case "approved_pay_now":
+        mail = approvedPayNowEmail(booking, Deno.env.get("SITE_URL") || "https://buchtm1.purtuc.at");
+        break;
+      case "rejected":
+        mail = rejectedEmail(booking);
+        break;
+      case "request_received":
+        mail = requestReceivedEmail(booking);
+        break;
+      case "paid":
+        mail = paidEmail(booking);
+        break;
+      case "expired":
+      case "payment_expired":
+        mail = expiredEmail(booking);
+        break;
+      case "refunded":
+        mail = refundedEmail(booking);
+        break;
+      case "deposit_request":
+        mail = depositRequestEmail(booking, s);
+        break;
+      case "deposit_received":
+        mail = depositReceivedEmail(booking, s);
+        break;
+      case "final_payment_request":
+        mail = finalPaymentRequestEmail(booking, s);
+        break;
+      case "final_payment_received":
+        mail = finalPaymentReceivedEmail(booking);
+        break;
+      case "cancelled_deposit_forfeit":
+        mail = cancelledForfeitEmail(booking, false);
+        break;
+      case "onsite_no_show_cancelled":
+        mail = cancelledForfeitEmail(booking, true);
+        break;
+      default:
+        return json({ error: "Unknown type" }, 400);
+    }
+
+    await sendMail(smtpKey, [booking.email], mail.subject, mail.html, mail.text);
+    return json({ success: true, language: booking.language });
   } catch (err) {
     console.error("send-booking-email error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: String(err) }, 500);
   }
 });
