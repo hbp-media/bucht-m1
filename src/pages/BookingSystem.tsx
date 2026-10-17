@@ -18,7 +18,7 @@ import StepDates from "@/components/booking/StepDates";
 import AvailableSpotsForRange from "@/components/booking/AvailableSpotsForRange";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import lageplanImg from "@/assets/lageplan.jpg";
+import lageplanImg from "@/assets/lageplan-aktuell.png";
 
 
 
@@ -401,8 +401,8 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
               src={lageplanImg}
               alt="Lageplan der Bucht M1 mit den nummerierten Angelplätzen 1 bis 9, Zufahrt und Parkplatz"
               loading="lazy"
-              width={1536}
-              height={1024}
+              width={1584}
+              height={672}
               className="w-full h-auto border border-border/60"
             />
             <p className="font-body text-[11px] text-muted-foreground mt-2">
