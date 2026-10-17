@@ -5,6 +5,8 @@ import { Check, Home, Caravan, MapPin, Users, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { FishingSpot } from "./StepSpot";
 import type { AccommodationType } from "@/lib/pricing";
+import { Button } from "@/components/ui/button";
+import lakeMap from "@/assets/lageplan-mit-rand.png";
 import {
   Dialog,
   DialogContent,
@@ -44,28 +46,26 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
   }, [detailSpot?.id]);
 
   useEffect(() => {
-    if (!range?.from || !range?.to) {
-      setSpots([]);
-      return;
-    }
+    const from = range?.from;
+    const to = range?.to;
     const load = async () => {
       setLoading(true);
-      const start = format(range.from!, "yyyy-MM-dd");
-      const end = format(range.to!, "yyyy-MM-dd");
+      const start = from ? format(from, "yyyy-MM-dd") : null;
+      const end = to ? format(to, "yyyy-MM-dd") : null;
 
       const [spotsRes, bookingsRes, blockedRes] = await Promise.all([
         supabase.from("fishing_spots").select("*").eq("active", true).order("sort_order"),
-        supabase
+        start && end ? supabase
           .from("bookings")
           .select("spot_id, start_date, end_date, status")
           .in("status", ["pending", "approved", "paid"])
           .lte("start_date", end)
-          .gte("end_date", start),
-        supabase
+          .gte("end_date", start) : Promise.resolve({ data: [] }),
+        start && end ? supabase
           .from("blocked_dates")
           .select("spot_id, date")
           .gte("date", start)
-          .lte("date", end),
+          .lte("date", end) : Promise.resolve({ data: [] }),
       ]);
 
       const blockedSpotIds = new Set<string>();
@@ -83,12 +83,41 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
     load();
   }, [range?.from?.getTime(), range?.to?.getTime()]);
 
-  if (!range?.from || !range?.to) return null;
+  const hasRange = Boolean(range?.from && range?.to);
 
   const availableCount = spots.filter((s) => s.available).length;
 
   return (
-    <div className="bg-card border border-border p-5">
+    <div>
+      <section className="mb-5" aria-label="Lageplan">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display text-base text-foreground">Lageplan</h3>
+          <span className="font-body text-xs text-muted-foreground">9 Plätze</span>
+        </div>
+        <div className="border border-border bg-background p-5 md:p-8">
+          <div className="relative">
+            <img src={lakeMap} alt="Lageplan der Bucht M1 mit den nummerierten Angelplätzen 1 bis 9" width={1584} height={672} className="w-full h-auto" />
+            {[
+              [1, "left-[10.4%] top-[62%]"], [2, "left-[24%] top-[51.8%]"],
+              [3, "left-[33.4%] top-[68.5%]"], [4, "left-[39.6%] top-[69.3%]"],
+              [5, "left-[47.8%] top-[71%]"], [6, "left-[56.6%] top-[74.8%]"],
+              [7, "left-[67.2%] top-[89%]"], [8, "left-[77.3%] top-[83.5%]"],
+              [9, "left-[95.3%] top-[43.8%]"],
+            ].map(([number, position]) => {
+              const mapSpot = spots.find((s) => s.name === `Platz ${number}`);
+              return (
+                <Button key={number} type="button" variant="outline" size="icon"
+                  aria-label={`Platz ${number} – Informationen`} title={`Platz ${number}`}
+                  disabled={!mapSpot} onClick={() => mapSpot && setDetailSpot(mapSpot)}
+                  className={`absolute ${position} -translate-x-1/2 -translate-y-1/2 h-7 w-7 md:h-9 md:w-9 rounded-none border-primary bg-background font-body text-sm md:text-lg hover:bg-primary hover:text-primary-foreground focus-visible:ring-2`}>
+                  {number}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+      {hasRange && <div className="bg-card border border-border p-5">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-display text-base text-foreground">
           Verfügbare Plätze in diesem Zeitraum
@@ -175,6 +204,8 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
         </div>
       )}
 
+      </div>}
+
       {/* Detail-Dialog */}
       <Dialog open={!!detailSpot} onOpenChange={(o) => !o && setDetailSpot(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -228,7 +259,7 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
 
               <div className="space-y-4">
                 {/* Status */}
-                <div>
+                {hasRange && <div>
                   {detailSpot.id === currentSpotId ? (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground font-body text-[10px] tracking-[0.2em] uppercase">
                       <Check className="w-3 h-3" /> Ausgewählt
@@ -243,6 +274,8 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
                     </span>
                   )}
                 </div>
+
+                }
 
                 {/* Beschreibung */}
                 {detailSpot.description && (
@@ -293,7 +326,9 @@ const AvailableSpotsForRange = ({ range, currentSpotId, onSelectSpot }: Props) =
 
                 {/* CTA */}
                 <div className="pt-4 border-t border-border">
-                  {detailSpot.available && detailSpot.id !== currentSpotId ? (
+                  {!hasRange ? (
+                    <p className="text-center font-body text-xs text-muted-foreground">Bitte wähle einen Zeitraum für die Buchung.</p>
+                  ) : detailSpot.available && detailSpot.id !== currentSpotId ? (
                     <button
                       type="button"
                       onClick={() => {
