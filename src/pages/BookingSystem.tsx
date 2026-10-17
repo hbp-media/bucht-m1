@@ -18,7 +18,7 @@ import StepDates from "@/components/booking/StepDates";
 import AvailableSpotsForRange from "@/components/booking/AvailableSpotsForRange";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import lageplanImg from "@/assets/lageplan-aktuell.png";
+
 
 
 
@@ -389,38 +389,13 @@ Dein Platz ist jetzt <strong>vorreserviert</strong>. Du erhältst gleich eine E-
           </div>
 
 
-          {/* Lageplan */}
-          <div className="bg-card border border-border p-4 md:p-5 mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display text-base text-foreground">Lageplan</h3>
-              <span className="font-body text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-                9 Plätze
-              </span>
-            </div>
-            <img
-              src={lageplanImg}
-              alt="Lageplan der Bucht M1 mit den nummerierten Angelplätzen 1 bis 9, Zufahrt und Parkplatz"
-              loading="lazy"
-              width={1584}
-              height={672}
-              className="w-full h-auto border border-border/60"
+          <div className="mb-5">
+            <AvailableSpotsForRange
+              range={meetsMinStay ? range : undefined}
+              currentSpotId={spot?.id ?? null}
+              onSelectSpot={handleSpotSelect}
             />
-            <p className="font-body text-[11px] text-muted-foreground mt-2">
-              Schematische Übersicht – die Nummern entsprechen den buchbaren Plätzen.
-            </p>
           </div>
-
-
-          {/* Info: alle Plätze mit Verfügbarkeit im gewählten Zeitraum */}
-          {range?.from && range?.to && meetsMinStay && (
-            <div className="mb-5">
-              <AvailableSpotsForRange
-                range={range}
-                currentSpotId={spot?.id ?? null}
-                onSelectSpot={handleSpotSelect}
-              />
-            </div>
-          )}
 
           {spot ? (
             <div ref={bookingDetailsRef} className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
