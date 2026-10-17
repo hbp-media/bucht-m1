@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { FishingSpot } from "./StepSpot";
 import type { AccommodationType } from "@/lib/pricing";
 import { Button } from "@/components/ui/button";
-import lakeMap from "@/assets/lageplan-mit-rand.png";
+import lakeMap from "@/assets/lageplan-blaue-tiefen.png";
 import {
   Dialog,
   DialogContent,
